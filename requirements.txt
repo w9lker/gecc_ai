@@ -4,3 +4,4 @@ scipy
 firebase-admin
 google-auth
 google-genai
+google-generativeai
