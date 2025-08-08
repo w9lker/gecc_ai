@@ -1,3 +1,6 @@
 streamlit
 numpy
 scipy
+firebase-admin
+google-auth
+google-genai

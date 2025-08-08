@@ -1,25 +1,41 @@
+import json
 import streamlit as st
 import numpy as np
 from scipy.io.wavfile import write
 import io
+from google.oauth2 import service_account
+from google.cloud import firestore
+from google.generativeai import GenerativeModel
+import traceback
+import google.generativeai as genai
 
-# --- DUMMY & HELPER FUNCTIONS (You will replace these) ---
+genai.configure(api_key=st.secrets['gemini']["api_key"])
+
+# --- HELPER FUNCTIONS  ---
+TEXT_GENERATION_PROMPT = """
+    Generate a short reading passage for a focus test, and provide 3 comprehension questions.
+    Return your response strictly as JSON with:
+    - "generated_text": the passage as a string,
+    - "questions": a list of objects, each with "text" (the question) and "correct_response" ("Yes" or "No").
+"""
 
 def load_test_from_gemini():
     """
-    Dummy function to simulate a call to Gemini.
-    In your real app, this will make an API call.
+    Calls Gemini to generate a reading passage and questions.
     Returns:
-        tuple: A tuple containing (str: generated_text, list: questions)
+        tuple: (generated_text: str, questions: list of dicts)
     """
-    # This is a placeholder. Replace with your actual Gemini API call.
-    generated_text = "Studies show that focus can be influenced by auditory stimuli. Some people find that certain types of music help them concentrate, while for others, silence is golden. The effect can depend on the complexity of the task and the individual's personality."
-    questions = [
-        "Do you agree that music can influence focus?",
-        "Have you ever used music to help you concentrate?",
-        "Do you believe silence is always better for complex tasks?"
-    ]
-    return generated_text, questions
+    try:
+        model = GenerativeModel(model_name="gemini-2.5-flash")
+        response = model.generate_content(TEXT_GENERATION_PROMPT)
+        # Parse the JSON from Gemini's response
+        data = json.loads(response.text)
+        generated_text = data["generated_text"]
+        questions = data["questions"]
+        return generated_text, questions
+    except Exception as e:
+        st.error(f"Failed to load test from Gemini: {e}")
+        return "Error loading test.", []
 
 def load_music(prompt: str):
     """
@@ -51,32 +67,18 @@ def submit_to_firestore(data: dict):
     This function requires authentication to be set up.
     """
     try:
-        # Use st.secrets for secure credential handling in deployed apps
-        # In your secrets.toml:
-        # [firestore]
-        # type = "service_account"
-        # project_id = "your-gcp-project-id"
-        # ... (rest of your service account JSON)
-        
         # This is how you would initialize with secrets
-        # from google.oauth2 import service_account
-        # from google.cloud import firestore
-        # creds = service_account.Credentials.from_service_account_info(st.secrets["firestore"])
-        # db = firestore.Client(credentials=creds, project=st.secrets["firestore"]["project_id"])
-        
-        # For now, we just print the data and simulate success
-        st.write("---")
-        st.write("`submit_to_firestore` called. In a real app, this would be sent to the database:")
-        st.json(data)
-        
-        # Example of what the real code would look like:
-        # collection_ref = db.collection("user_responses")
-        # doc_ref = collection_ref.add(data)
-        # st.success(f"Data successfully submitted to Firestore with Document ID: {doc_ref.id}")
+
+        creds = service_account.Credentials.from_service_account_info(st.secrets["firestore"])
+        db = firestore.Client(credentials=creds, project=st.secrets["firestore"]["project_id"])
+
+        collection_ref = db.collection("user_responses")
+        collection_ref.add(data)
+        st.success("Your response were saved. Thank you 👻")
 
         return True
     except Exception as e:
-        st.error(f"Failed to submit to Firestore: {e}")
+        st.error(f"Failed to submit to Firestore:\n{traceback.format_exc()}")
         return False
 
 # --- STATE INITIALIZATION ---
