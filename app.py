@@ -36,7 +36,7 @@ def load_test_from_gemini():
         questions = data["questions"]
         return generated_text, questions
     except Exception as e:
-        print(f"Failed to load test from Gemini: {e}")
+        st.error(f"Failed to load test from Gemini: {e}")
         return "Error loading test.", []
 
 def load_music(prompt: str):
