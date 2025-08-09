@@ -173,7 +173,8 @@ def render_test_page(page_num: int, with_music: bool):
         st.session_state.test_answers[f"page_{page_num}"] = page_answers
         
         # Increment page number and rerun
-        st.session_state.page_number
+        st.session_state.page_number += 1
+        st.rerun()
 
 def render_final_page():
     """Renders the final thank you and submission page."""
