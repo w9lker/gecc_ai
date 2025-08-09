@@ -5,16 +5,13 @@ from scipy.io.wavfile import write
 import io
 from google.oauth2 import service_account
 from google.cloud import firestore
-from google.generativeai import GenerativeModel
 import traceback
-import google.generativeai as genai
-
-genai.configure(api_key=st.secrets['gemini']["api_key"])
+from google import genai
 
 # --- HELPER FUNCTIONS  ---
 TEXT_GENERATION_PROMPT = """
     Generate a short reading passage for a focus test, and provide 3 comprehension questions.
-    Return your response strictly as JSON with:
+    Return your response strictly as JSON (give me a json in a format it is stored in the file, don't give markdown as output)
     - "generated_text": the passage as a string,
     - "questions": a list of objects, each with "text" (the question) and "correct_response" ("Yes" or "No").
 """
@@ -26,15 +23,20 @@ def load_test_from_gemini():
         tuple: (generated_text: str, questions: list of dicts)
     """
     try:
-        model = GenerativeModel(model_name="gemini-2.5-flash")
-        response = model.generate_content(TEXT_GENERATION_PROMPT)
+        client = genai.Client(api_key=st.secrets['gemini']['api_key'])
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=TEXT_GENERATION_PROMPT,
+        ).text
+
         # Parse the JSON from Gemini's response
-        data = json.loads(response.text)
+        data = json.loads(response)
         generated_text = data["generated_text"]
         questions = data["questions"]
         return generated_text, questions
     except Exception as e:
-        st.error(f"Failed to load test from Gemini: {e}")
+        print(f"Failed to load test from Gemini: {e}")
         return "Error loading test.", []
 
 def load_music(prompt: str):
@@ -122,7 +124,7 @@ def render_test_page(page_num: int, with_music: bool):
     st.header(f"Test Section {page_num - 1}")
 
     # Load test content
-    test_text, questions = load_test_from_gemini()
+    test_text, question_obj_list = load_test_from_gemini()
     st.markdown(test_text)
     
     if with_music:
@@ -135,13 +137,23 @@ def render_test_page(page_num: int, with_music: bool):
     
     # Store answers in a dictionary for this page
     page_answers = {}
-    for i, q in enumerate(questions):
+    for i, question_obj in enumerate(question_obj_list):
         # The key for each widget must be unique across the entire app
+        q = question_obj['text']
         page_answers[q] = st.radio(q, ("Yes", "No"), key=f"p{page_num}_q{i}", horizontal=True)
         
     if st.button("Next", key=f"next_p{page_num}"):
+        # evaluate the test answers
+        correct_count = 0
+        for question, correct_response in [(question_obj['text'], question_obj['correct_response']) for 
+                                            question_obj in question_obj_list]:
+            if page_answers[question] == correct_response: 
+                correct_count += 1
+        page_answers['correct_count'] = correct_count
+        
         # Save this page's answers to the main state
         st.session_state.test_answers[f"page_{page_num}"] = page_answers
+        
         # Increment page number and rerun
         st.session_state.page_number += 1
         st.rerun()
