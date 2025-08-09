@@ -1,4 +1,5 @@
 import json
+import time
 import streamlit as st
 import numpy as np
 from scipy.io.wavfile import write
@@ -16,28 +17,39 @@ TEXT_GENERATION_PROMPT = """
     - "questions": a list of objects, each with "text" (the question) and "correct_response" ("Yes" or "No").
 """
 
-def load_test_from_gemini():
+def load_test_from_gemini(max_retries=7, retry_delay=5):
     """
     Calls Gemini to generate a reading passage and questions.
+    Retries on rate limit errors.
     Returns:
         tuple: (generated_text: str, questions: list of dicts)
     """
-    try:
-        client = genai.Client(api_key=st.secrets['gemini']['api_key'])
+    with st.spinner("Loading test from Gemini..."):
+        for attempt in range(1, max_retries + 1):
+            try:
+                client = genai.Client(api_key=st.secrets['gemini']['api_key'])
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=TEXT_GENERATION_PROMPT,
-        ).text
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=TEXT_GENERATION_PROMPT,
+                ).text
 
-        # Parse the JSON from Gemini's response
-        data = json.loads(response)
-        generated_text = data["generated_text"]
-        questions = data["questions"]
-        return generated_text, questions
-    except Exception as e:
-        st.error(f"Failed to load test from Gemini: {e}")
-        return "Error loading test.", []
+                # Parse the JSON from Gemini's response
+                data = json.loads(response)
+                generated_text = data["generated_text"]
+                questions = data["questions"]
+                return generated_text, questions
+            except Exception as e:
+                error_msg = str(e)
+                if ("rate limit" in error_msg.lower() or "429" in error_msg) and attempt < max_retries:
+                    time.sleep(retry_delay)
+                    continue
+                elif "rate limit" in error_msg.lower() or "429" in error_msg:
+                    st.error("Rate limit reached. Maximum retries exceeded.")
+                    return "Error loading test (rate limit).", []
+                else:
+                    st.error(f"Failed to load test from Gemini: {e}")
+                    return "Error loading test.", []
 
 def load_music(prompt: str):
     """
@@ -123,8 +135,14 @@ def render_test_page(page_num: int, with_music: bool):
     """A generic function to render a test page."""
     st.header(f"Test Section {page_num - 1}")
 
-    # Load test content
-    test_text, question_obj_list = load_test_from_gemini()
+    # Use session_state to cache test content per page
+    test_key = f"test_content_page_{page_num}"
+    if test_key not in st.session_state:
+        test_text, question_obj_list = load_test_from_gemini()
+        st.session_state[test_key] = (test_text, question_obj_list)
+    else:
+        test_text, question_obj_list = st.session_state[test_key]
+
     st.markdown(test_text)
     
     if with_music:
@@ -155,8 +173,7 @@ def render_test_page(page_num: int, with_music: bool):
         st.session_state.test_answers[f"page_{page_num}"] = page_answers
         
         # Increment page number and rerun
-        st.session_state.page_number += 1
-        st.rerun()
+        st.session_state.page_number
 
 def render_final_page():
     """Renders the final thank you and submission page."""
