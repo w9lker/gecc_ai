@@ -112,7 +112,7 @@ def load_music(prompt: str):
     pred = generate_music({"prompt": prompt})[0]
     bytes_b64 = dict(pred)["bytesBase64Encoded"]
     decoded_audio_data = base64.b64decode(bytes_b64)
-    st.audio(decoded_audio_data, autoplay=True)
+    return decoded_audio_data
 
 
 def submit_to_firestore(data: dict):
@@ -189,20 +189,23 @@ def render_test_page(page_num: int, with_music: bool):
     """A generic function to render a test page."""
     st.header(f"Test Section {page_num - 1}")
 
-    if with_music:
-        # Use the user's preference from the first page as a prompt
-        music_prompt = f"""style: {st.session_state.user_info.get("favourite_music_style")}, volume: {st.session_state.user_info.get("preferred_volume")}"""
-        time.sleep(0.1)
-        print(music_prompt)
-        load_music(music_prompt)
-
     # Use session_state to cache test content per page
     test_key = f"test_content_page_{page_num}"
     if test_key not in st.session_state:
+        decoded_audio_data = None
         test_text, question_obj_list = load_test_from_gemini()
-        st.session_state[test_key] = (test_text, question_obj_list)
+        if with_music:
+            # Use the user's preference from the first page as a prompt
+            music_prompt = f"""style: {st.session_state.user_info.get("favourite_music_style")}, volume: {st.session_state.user_info.get("preferred_volume")}"""
+            time.sleep(0.1)
+            decoded_audio_data = load_music(music_prompt)
+
+        st.session_state[test_key] = (test_text, question_obj_list, decoded_audio_data)
     else:
-        test_text, question_obj_list = st.session_state[test_key]
+        test_text, question_obj_list, decoded_audio_data = st.session_state[test_key]
+
+    if decoded_audio_data is not None:
+        st.audio(decoded_audio_data, autoplay=True, loop=True)
 
     st.markdown(test_text)
 
