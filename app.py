@@ -201,7 +201,10 @@ def render_test_page(page_num: int, with_music: bool):
 
     if with_music:
         # Use the user's preference from the first page as a prompt
-        music_prompt = st.session_state.user_info.get("favourite_music_style", "calm")
+        music_prompt = f"""
+            {st.session_state.user_info.get("favourite_music_style")},
+            {st.session_state.user_info.get("preferred_volume")},
+        """
         load_music(str(music_prompt))
 
     st.divider()
