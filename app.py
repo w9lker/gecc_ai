@@ -189,6 +189,13 @@ def render_test_page(page_num: int, with_music: bool):
     """A generic function to render a test page."""
     st.header(f"Test Section {page_num - 1}")
 
+    if with_music:
+        # Use the user's preference from the first page as a prompt
+        music_prompt = f"""style: {st.session_state.user_info.get("favourite_music_style")}, volume: {st.session_state.user_info.get("preferred_volume")}"""
+        time.sleep(0.1)
+        print(music_prompt)
+        load_music(music_prompt)
+
     # Use session_state to cache test content per page
     test_key = f"test_content_page_{page_num}"
     if test_key not in st.session_state:
@@ -198,13 +205,6 @@ def render_test_page(page_num: int, with_music: bool):
         test_text, question_obj_list = st.session_state[test_key]
 
     st.markdown(test_text)
-
-    if with_music:
-        # Use the user's preference from the first page as a prompt
-        music_prompt = f"""style: {st.session_state.user_info.get("favourite_music_style")}, volume: {st.session_state.user_info.get("preferred_volume")}"""
-        time.sleep(0.1)
-        print(music_prompt)
-        load_music(music_prompt)
 
     st.divider()
 
