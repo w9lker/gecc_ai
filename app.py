@@ -23,18 +23,18 @@ TEXT_GENERATION_PROMPT = """
 """
 
 def get_access_token_for_lyria() -> str:
-    """Get OAuth token for Lyria API using service account credentials."""
+    """Get OAuth token for Lyria API using separate credentials."""
     try:
-        # Use the same firestore credentials for Lyria API access
+        # Use separate lyria credentials for Lyria API access
         creds = service_account.Credentials.from_service_account_info(
-            st.secrets["firestore"],
+            st.secrets["lyria"],
             scopes=["https://www.googleapis.com/auth/cloud-platform"]
         )
         req = google.auth.transport.requests.Request()
         creds.refresh(req)
         return creds.token
     except Exception as e:
-        st.error(f"Failed to get access token: {e}")
+        st.error(f"Failed to get access token for Lyria: {e}")
         return None
 
 def decode_prediction_to_wav_bytes(pred_bytes_b64: str) -> bytes:
@@ -198,12 +198,12 @@ def load_music(music_params: dict, max_retries=3):
         # Create detailed prompt
         music_prompt, negative_prompt = create_music_prompt(music_params)
         
-        with st.expander("🎵 Music Generation Details", expanded=False):
+        with st.expander("ðŸŽµ Music Generation Details", expanded=False):
             st.write(f"**Main Prompt:** {music_prompt}")
             st.write(f"**Negative Prompt:** {negative_prompt}")
             
-        # Set up API endpoint
-        project_id = st.secrets["firestore"]["project_id"]
+        # Set up API endpoint - use your project for Lyria
+        project_id = st.secrets["lyria"]["project_id"]
         endpoint = (
             f"https://us-central1-aiplatform.googleapis.com/v1/projects/"
             f"{project_id}/locations/us-central1/publishers/google/models/lyria-002:predict"
@@ -233,7 +233,7 @@ def load_music(music_params: dict, max_retries=3):
         }
         
         # Make request with progress indicator
-        with st.spinner("🎼 Creating your personalized study music... This may take 30-60 seconds"):
+        with st.spinner("ðŸŽ¼ Creating your personalized study music... This may take 30-60 seconds"):
             for attempt in range(1, max_retries + 1):
                 try:
                     response = requests.post(endpoint, headers=headers, json=payload, timeout=120)
@@ -279,7 +279,7 @@ def load_music(music_params: dict, max_retries=3):
             wav_bytes = decode_prediction_to_wav_bytes(pred_bytes_b64)
             
             if wav_bytes:
-                st.success("🎵 Music generated successfully!")
+                st.success("ðŸŽµ Music generated successfully!")
                 return wav_bytes
             else:
                 return create_silent_audio()
@@ -325,7 +325,7 @@ def submit_to_firestore(data: dict):
 
         collection_ref = db.collection("user_responses")
         doc_ref = collection_ref.add(data)
-        st.success("Your responses were saved. Thank you! 💻")
+        st.success("Your responses were saved. Thank you! ðŸ’»")
         return True
     except Exception as e:
         st.error(f"Failed to submit to Firestore: {str(e)[:200]}")
@@ -366,14 +366,14 @@ def render_page_1():
     
     # Basic user info form
     with st.form("user_info_form"):
-        st.subheader("📋 Basic Information")
+        st.subheader("ðŸ“‹ Basic Information")
         music_while_studying = st.radio(
             "Do you usually listen to music while studying?", 
             ("Yes", "No"), 
             horizontal=True
         )
         
-        st.subheader("🎵 Music Preferences")
+        st.subheader("ðŸŽµ Music Preferences")
         
         # Genre selection
         genre = st.selectbox(
@@ -416,10 +416,10 @@ def render_page_1():
             help="Select specific instruments you'd like to hear (leave empty for any)"
         )
         
-        st.subheader("⚙️ Advanced Options")
+        st.subheader("âš™ï¸ Advanced Options")
         
         # Advanced options in expander
-        with st.expander("🔧 Advanced Music Parameters (Optional)"):
+        with st.expander("ðŸ”§ Advanced Music Parameters (Optional)"):
             negative_prompt = st.text_area(
                 "What should the music NOT include?",
                 placeholder="e.g., vocals, sudden changes, aggressive sounds",
@@ -434,7 +434,7 @@ def render_page_1():
                 help="Use the same seed to get similar music each time (0 = random)"
             )
         
-        submitted = st.form_submit_button("🎵 Continue to Study Sessions", type="primary")
+        submitted = st.form_submit_button("ðŸŽµ Continue to Study Sessions", type="primary")
         
         if submitted:
             final_genre = other_genre if genre == "Other" and other_genre.strip() else genre
@@ -467,9 +467,9 @@ def render_test_page(page_num: int, with_music: bool):
     
     # Different test types for variety
     test_types = {
-        2: {"title": "Reading Comprehension - Baseline", "icon": "📚", "description": "First, let's establish your baseline reading performance without any music."},
-        3: {"title": "Reading Comprehension - With Background Music", "icon": "🎵", "description": "Now let's see how background music affects your focus and comprehension."},
-        4: {"title": "Reading Comprehension - Extended Music Session", "icon": "🎼", "description": "Final test with a different passage and the same music style to confirm results."}
+        2: {"title": "Reading Comprehension - Baseline", "icon": "ðŸ“š", "description": "First, let's establish your baseline reading performance without any music."},
+        3: {"title": "Reading Comprehension - With Background Music", "icon": "ðŸŽµ", "description": "Now let's see how background music affects your focus and comprehension."},
+        4: {"title": "Reading Comprehension - Extended Music Session", "icon": "ðŸŽ¼", "description": "Final test with a different passage and the same music style to confirm results."}
     }
     
     test_info = test_types[page_num]
@@ -486,7 +486,7 @@ def render_test_page(page_num: int, with_music: bool):
         test_text, question_obj_list = st.session_state[test_key]
 
     if with_music:
-        st.markdown("### 🎵 Background Music")
+        st.markdown("### ðŸŽµ Background Music")
         # Generate music based on user preferences
         music_cache_key = f"music_page_{page_num}"
         
@@ -498,17 +498,17 @@ def render_test_page(page_num: int, with_music: bool):
         
         if audio_bytes and len(audio_bytes) > 0:
             st.audio(audio_bytes, format='audio/wav', loop=True)
-            st.caption("🎧 You can adjust the volume and loop the music using the controls above. Start the music before reading.")
+            st.caption("ðŸŽ§ You can adjust the volume and loop the music using the controls above. Start the music before reading.")
         else:
             st.warning("Music generation failed. Continuing with silent study session.")
             
         st.divider()
 
-    st.markdown("### 📖 Reading Passage")
+    st.markdown("### ðŸ“– Reading Passage")
     st.markdown(test_text)
     
     st.divider()
-    st.markdown("### ❓ Comprehension Questions")
+    st.markdown("### â“ Comprehension Questions")
     
     # Store answers in a dictionary for this page
     page_answers = {}
@@ -524,7 +524,7 @@ def render_test_page(page_num: int, with_music: bool):
     col1, col2 = st.columns([3, 1])
     
     with col1:
-        if st.button("📝 Complete This Section", key=f"next_p{page_num}", type="primary"):
+        if st.button("ðŸ“ Complete This Section", key=f"next_p{page_num}", type="primary"):
             # evaluate the test answers
             correct_count = 0
             for question, correct_response in [(question_obj['text'], question_obj['correct_response']) for 
@@ -542,7 +542,7 @@ def render_test_page(page_num: int, with_music: bool):
             
             # Show quick feedback
             accuracy = (correct_count / len(question_obj_list)) * 100
-            st.success(f"✅ Section completed! Accuracy: {correct_count}/{len(question_obj_list)} ({accuracy:.1f}%)")
+            st.success(f"âœ… Section completed! Accuracy: {correct_count}/{len(question_obj_list)} ({accuracy:.1f}%)")
             time.sleep(1.5)
             
             # Increment page number and rerun
@@ -550,16 +550,16 @@ def render_test_page(page_num: int, with_music: bool):
             st.rerun()
     
     with col2:
-        if st.button("🔄 Restart Study", key=f"restart_p{page_num}", help="Start over from the beginning"):
+        if st.button("ðŸ”„ Restart Study", key=f"restart_p{page_num}", help="Start over from the beginning"):
             restart_app()
 
 def render_final_page():
     """Renders the final thank you and submission page."""
-    st.header("🎉 Study Complete!")
+    st.header("ðŸŽ‰ Study Complete!")
     st.markdown("Thank you for participating in our music and focus study!")
     
     # Calculate and display results
-    st.subheader("📊 Your Performance Summary")
+    st.subheader("ðŸ“Š Your Performance Summary")
     
     results_summary = {}
     music_sections = []
@@ -590,7 +590,7 @@ def render_final_page():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("#### 📚 Without Music")
+        st.markdown("#### ðŸ“š Without Music")
         for section in no_music_sections:
             st.metric(
                 label="Baseline Score",
@@ -599,7 +599,7 @@ def render_final_page():
             )
     
     with col2:
-        st.markdown("#### 🎵 With Music")
+        st.markdown("#### ðŸŽµ With Music")
         music_scores = []
         for section in music_sections:
             music_scores.append(section['percentage'])
@@ -615,16 +615,16 @@ def render_final_page():
         music_avg = sum([s['percentage'] for s in music_sections]) / len(music_sections)
         difference = music_avg - baseline_avg
         
-        st.markdown("#### 📈 Performance Analysis")
+        st.markdown("#### ðŸ“ˆ Performance Analysis")
         if difference > 5:
-            st.success(f"🎵 Music improved your performance by {difference:.1f} percentage points!")
+            st.success(f"ðŸŽµ Music improved your performance by {difference:.1f} percentage points!")
         elif difference < -5:
-            st.info(f"📚 You performed {abs(difference):.1f} percentage points better without music.")
+            st.info(f"ðŸ“š You performed {abs(difference):.1f} percentage points better without music.")
         else:
-            st.info("📊 Music had minimal impact on your performance (within 5% difference).")
+            st.info("ðŸ“Š Music had minimal impact on your performance (within 5% difference).")
     
     # Show music preferences used
-    st.subheader("🎵 Your Music Configuration")
+    st.subheader("ðŸŽµ Your Music Configuration")
     music_params = st.session_state.music_params
     
     col1, col2 = st.columns(2)
@@ -640,7 +640,7 @@ def render_final_page():
     st.divider()
     
     # Optional: Show detailed data for review (collapsed by default)
-    with st.expander("📋 View Detailed Data (Optional)"):
+    with st.expander("ðŸ“‹ View Detailed Data (Optional)"):
         st.subheader("Music Parameters")
         st.json(st.session_state.music_params)
         
@@ -650,7 +650,7 @@ def render_final_page():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        if st.button("📤 Submit Results to Research Database", type="primary"):
+        if st.button("ðŸ“¤ Submit Results to Research Database", type="primary"):
             # Combine all data into one dictionary for submission
             final_data = {
                 "timestamp": time.time(),
@@ -668,18 +668,18 @@ def render_final_page():
             with st.spinner("Submitting your data to the research database..."):
                 success = submit_to_firestore(final_data)
                 if success:
-                    st.success("✅ Your results have been submitted successfully! Thank you for contributing to our research.")
+                    st.success("âœ… Your results have been submitted successfully! Thank you for contributing to our research.")
                     st.balloons()
     
     with col2:
-        if st.button("🔄 Start New Study", help="Clear all data and start a new study session"):
+        if st.button("ðŸ”„ Start New Study", help="Clear all data and start a new study session"):
             restart_app()
 
 # --- MAIN APP ROUTER ---
 
 st.set_page_config(
     page_title="Music & Focus Study",
-    page_icon="🎵",
+    page_icon="ðŸŽµ",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -687,9 +687,9 @@ st.set_page_config(
 # Header with restart option
 col1, col2 = st.columns([4, 1])
 with col1:
-    st.title("🎵 Interactive Music & Focus Study")
+    st.title("ðŸŽµ Interactive Music & Focus Study")
 with col2:
-    if st.button("🔄 Restart", key="header_restart", help="Start over from beginning"):
+    if st.button("ðŸ”„ Restart", key="header_restart", help="Start over from beginning"):
         restart_app()
 
 # Add progress indicator
@@ -713,7 +713,7 @@ try:
         render_final_page()
     else:
         st.error("Invalid page state detected.")
-        if st.button("🔄 Reset Application"):
+        if st.button("ðŸ”„ Reset Application"):
             restart_app()
 
 except Exception as e:
@@ -723,5 +723,5 @@ except Exception as e:
     with st.expander("Error Details"):
         st.code(traceback.format_exc())
     
-    if st.button("🔄 Restart Application", type="primary"):
+    if st.button("ðŸ”„ Restart Application", type="primary"):
         restart_app()
