@@ -5,3 +5,6 @@ firebase-admin
 google-auth
 google-genai
 google-generativeai
+requests
+google-auth
+google-cloud-firestore
