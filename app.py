@@ -1,25 +1,149 @@
-import base64
 import json
 import time
-import traceback
-
-import requests
 import streamlit as st
-from google import genai
-from google.cloud import firestore
+import numpy as np
+from scipy.io.wavfile import write
+import io
+import base64
+import re
 from google.oauth2 import service_account
-import google.auth
+from google.cloud import firestore
+import google.auth.transport.requests
+import traceback
+import requests
+import wave
+from google import genai
 
 # --- HELPER FUNCTIONS  ---
-PROJECT_ID = st.secrets["lyria"]["project_id"]
 TEXT_GENERATION_PROMPT = """
     Generate a short reading passage for a focus test, and provide 3 comprehension questions.
     Return your response strictly as JSON (give me a json in a format it is stored in the file, don't give markdown as output)
     - "generated_text": the passage as a string,
     - "questions": a list of objects, each with "text" (the question) and "correct_response" ("Yes" or "No").
 """
-LYRIA_MODEL = f"https://us-central1-aiplatform.googleapis.com/v1/projects/{PROJECT_ID}/locations/us-central1/publishers/google/models/lyria-002:predict"
 
+def get_access_token_for_lyria() -> str:
+    """Get OAuth token for Lyria API using service account credentials."""
+    try:
+        # Use the same firestore credentials for Lyria API access
+        creds = service_account.Credentials.from_service_account_info(
+            st.secrets["firestore"],
+            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
+        req = google.auth.transport.requests.Request()
+        creds.refresh(req)
+        return creds.token
+    except Exception as e:
+        st.error(f"Failed to get access token: {e}")
+        return None
+
+def decode_prediction_to_wav_bytes(pred_bytes_b64: str) -> bytes:
+    """
+    Lyria predict returns raw 48kHz 16-bit PCM stereo as base64-encoded bytes.
+    We wrap that raw PCM into a WAV container so media players can open it.
+    """
+    try:
+        raw = base64.b64decode(pred_bytes_b64)
+        pcm = np.frombuffer(raw, dtype=np.int16)
+        # Ensure even number of samples for stereo reshape
+        if pcm.size % 2 != 0:
+            pcm = pcm[:-1]
+        stereo = pcm.reshape(-1, 2)
+
+        # Build a WAV using the standard library
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as w:
+            nchannels = 2
+            sampwidth = 2  # 16-bit
+            framerate = 48000
+            nframes = stereo.shape[0]
+            w.setnchannels(nchannels)
+            w.setsampwidth(sampwidth)
+            w.setframerate(framerate)
+            w.writeframes(stereo.tobytes())
+        return buf.getvalue()
+    except Exception as e:
+        st.error(f"Error decoding audio: {e}")
+        return None
+
+def create_music_prompt(music_params: dict) -> tuple:
+    """
+    Create a detailed music prompt based on user preferences.
+    Returns: (prompt, negative_prompt)
+    """
+    try:
+        # Base style/genre
+        genre = music_params.get('genre', 'ambient')
+        
+        # Tempo mapping
+        tempo_map = {
+            "Very Slow": "very slow tempo, meditative pace",
+            "Slow": "slow tempo, relaxed pace", 
+            "Moderate": "moderate tempo, steady rhythm",
+            "Fast": "fast tempo, energetic pace",
+            "Very Fast": "very fast tempo, high energy"
+        }
+        tempo_desc = tempo_map.get(music_params.get('tempo', 'Moderate'))
+        
+        # Mood mapping
+        mood = music_params.get('mood', 'calm')
+        
+        # Instrumentation
+        instruments = music_params.get('instruments', [])
+        instrument_desc = ""
+        if instruments:
+            if len(instruments) == 1:
+                instrument_desc = f", featuring {instruments[0].lower()}"
+            elif len(instruments) == 2:
+                instrument_desc = f", featuring {instruments[0].lower()} and {instruments[1].lower()}"
+            else:
+                instrument_desc = f", featuring {', '.join(instruments[:-1]).lower()}, and {instruments[-1].lower()}"
+        
+        # Volume intensity mapping
+        volume_map = {
+            "Very Quiet": "very soft and gentle, barely audible",
+            "Quiet": "soft and gentle, background ambiance",
+            "Moderate": "moderate volume, balanced dynamics",
+            "Loud": "full volume, rich and present",
+            "Very Loud": "powerful and intense, strong presence"
+        }
+        volume_desc = volume_map.get(music_params.get('volume', 'Moderate'))
+        
+        # Build main prompt
+        main_prompt = f"{genre} music, {mood} and peaceful, {tempo_desc}{instrument_desc}, {volume_desc}"
+        
+        # Add study-specific characteristics
+        main_prompt += ", instrumental, non-distracting, perfect for concentration and focus"
+        
+        # Handle negative prompt
+        negative_items = []
+        
+        # Add user's custom negative prompt
+        custom_negative = music_params.get('negative_prompt', '').strip()
+        if custom_negative:
+            negative_items.append(custom_negative)
+            
+        # Add automatic negative prompts based on selections
+        if music_params.get('tempo') == 'Very Slow':
+            negative_items.extend(["fast", "energetic", "upbeat"])
+        elif music_params.get('tempo') in ['Fast', 'Very Fast']:
+            negative_items.extend(["slow", "meditative", "sleepy"])
+            
+        if music_params.get('mood') == 'calm':
+            negative_items.extend(["aggressive", "chaotic", "dissonant"])
+        elif music_params.get('mood') == 'energetic':
+            negative_items.extend(["sleepy", "boring", "monotonous"])
+            
+        # Always exclude distracting elements for study music
+        negative_items.extend(["vocals", "lyrics", "singing", "sudden changes", "jarring transitions"])
+        
+        negative_prompt = ", ".join(set(negative_items))  # Remove duplicates
+        
+        return main_prompt, negative_prompt
+        
+    except Exception as e:
+        st.error(f"Error creating music prompt: {e}")
+        return "ambient calm music for studying", "vocals, lyrics"
 
 def load_test_from_gemini(max_retries=7, retry_delay=5):
     """
@@ -31,7 +155,7 @@ def load_test_from_gemini(max_retries=7, retry_delay=5):
     with st.spinner("Loading test from Gemini..."):
         for attempt in range(1, max_retries + 1):
             try:
-                client = genai.Client(api_key=st.secrets["gemini"]["api_key"])
+                client = genai.Client(api_key=st.secrets['gemini']['api_key'])
 
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
@@ -45,75 +169,150 @@ def load_test_from_gemini(max_retries=7, retry_delay=5):
                 return generated_text, questions
             except Exception as e:
                 error_msg = str(e)
-                if (
-                    "rate limit" in error_msg.lower() or "429" in error_msg
-                ) and attempt < max_retries:
+                if ("rate limit" in error_msg.lower() or "429" in error_msg) and attempt < max_retries:
+                    st.warning(f"Rate limit hit, retrying in {retry_delay} seconds... (attempt {attempt}/{max_retries})")
                     time.sleep(retry_delay)
                     continue
                 elif "rate limit" in error_msg.lower() or "429" in error_msg:
                     st.error("Rate limit reached. Maximum retries exceeded.")
-                    return "Error loading test (rate limit).", []
+                    return "Error loading test (rate limit). Please try again later.", []
                 else:
-                    st.error(f"Failed to load test from Gemini: {e}")
-                    return "Error loading test.", []
+                    st.error(f"Failed to load test from Gemini: {str(e)[:200]}")
+                    return "Error loading test. Please try again.", []
 
-
-def load_music(prompt: str):
+def load_music(music_params: dict, max_retries=3):
     """
-    Dummy function to simulate generating or fetching music.
-    In your real app, this could call a music generation API.
-    For this demo, it generates a 5-second silent WAV file.
+    Generate music using Lyria API based on user preferences.
     Args:
-        prompt (str): The user's music preference (e.g., "Classical").
+        music_params (dict): Dictionary containing all music parameters
     Returns:
-        bytes: The audio data in bytes.
+        bytes: The audio data in bytes, or None if generation fails.
     """
-    st.toast("Generating music based on: prompt...")
-
-    def send_request_to_google_api(api_endpoint, data=None):
-        """
-        Sends an HTTP request to a Google API endpoint.
-
-        Args:
-            api_endpoint: The URL of the Google API endpoint.
-            data: (Optional) Dictionary of data to send in the request body (for POST, PUT, etc.).
-
-        Returns:
-            The response from the Google API.
-        """
-
-        # Get access token calling API
-        scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-
-        # 2. LOAD CREDENTIALS WITH THE SPECIFIED SCOPE
-        creds = service_account.Credentials.from_service_account_info(
-            st.secrets["lyria"],
-            scopes=scopes,  # <-- THE FIX IS HERE
+    try:
+        # Get access token
+        token = get_access_token_for_lyria()
+        if not token:
+            st.error("Failed to authenticate with Lyria API")
+            return create_silent_audio()
+            
+        # Create detailed prompt
+        music_prompt, negative_prompt = create_music_prompt(music_params)
+        
+        with st.expander("🎵 Music Generation Details", expanded=False):
+            st.write(f"**Main Prompt:** {music_prompt}")
+            st.write(f"**Negative Prompt:** {negative_prompt}")
+            
+        # Set up API endpoint
+        project_id = st.secrets["firestore"]["project_id"]
+        endpoint = (
+            f"https://us-central1-aiplatform.googleapis.com/v1/projects/"
+            f"{project_id}/locations/us-central1/publishers/google/models/lyria-002:predict"
         )
-        auth_req = google.auth.transport.requests.Request()
-        creds.refresh(auth_req)
-        access_token = creds.token
-
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
+        
+        # Prepare request - following official Lyria API format
+        instance = {
+            "prompt": music_prompt
         }
-        print(api_endpoint)
-        response = requests.post(api_endpoint, headers=headers, json=data)
-        response.raise_for_status()
-        return response.json()
+        
+        # Add negative prompt if provided
+        if negative_prompt.strip():
+            instance["negative_prompt"] = negative_prompt
+            
+        # Add seed if provided (for reproducibility)
+        seed = music_params.get('seed')
+        if seed is not None and seed > 0:
+            instance["seed"] = int(seed)
+        else:
+            # Use sample_count instead of seed for variety
+            instance["sample_count"] = 1
+        
+        payload = {"instances": [instance], "parameters": {}}
+        headers = {
+            "Authorization": f"Bearer {token}", 
+            "Content-Type": "application/json"
+        }
+        
+        # Make request with progress indicator
+        with st.spinner("🎼 Creating your personalized study music... This may take 30-60 seconds"):
+            for attempt in range(1, max_retries + 1):
+                try:
+                    response = requests.post(endpoint, headers=headers, json=payload, timeout=120)
+                    response.raise_for_status()
+                    break
+                except requests.exceptions.Timeout:
+                    if attempt < max_retries:
+                        st.warning(f"Request timeout, retrying... (attempt {attempt}/{max_retries})")
+                        time.sleep(3)
+                        continue
+                    else:
+                        st.error("Music generation timed out. Using silence instead.")
+                        return create_silent_audio()
+                except requests.exceptions.HTTPError as e:
+                    error_msg = f"HTTP Error: {e.response.status_code}"
+                    if e.response.status_code == 429:  # Rate limit
+                        st.error("API rate limit reached. Using silence instead.")
+                    elif e.response.status_code == 403:  # Permission denied
+                        st.error("API access denied. Check your credentials and permissions.")
+                    else:
+                        st.error(f"API Error: {error_msg}")
+                    return create_silent_audio()
+                except Exception as e:
+                    if attempt < max_retries:
+                        st.warning(f"API error, retrying... (attempt {attempt}/{max_retries}): {str(e)[:100]}")
+                        time.sleep(3)
+                        continue
+                    else:
+                        st.error(f"Failed to generate music after {max_retries} attempts: {str(e)[:200]}")
+                        return create_silent_audio()
+        
+        # Parse response
+        try:
+            data = response.json()
+            predictions = data.get("predictions", [])
+            
+            if not predictions:
+                st.error("No music generated. Using silence instead.")
+                return create_silent_audio()
+            
+            # Decode the first prediction to WAV bytes
+            pred_bytes_b64 = predictions[0]["bytesBase64Encoded"]
+            wav_bytes = decode_prediction_to_wav_bytes(pred_bytes_b64)
+            
+            if wav_bytes:
+                st.success("🎵 Music generated successfully!")
+                return wav_bytes
+            else:
+                return create_silent_audio()
+                
+        except json.JSONDecodeError:
+            st.error("Invalid response format from API")
+            return create_silent_audio()
+        
+    except Exception as e:
+        st.error(f"Unexpected error in music generation: {str(e)[:200]}")
+        return create_silent_audio()
 
-    def generate_music(request: dict):
-        req = {"instances": [request], "parameters": {}}
-        print(req)
-        resp = send_request_to_google_api(LYRIA_MODEL, req)
-        return resp["predictions"]
-
-    pred = generate_music({"prompt": prompt})[0]
-    bytes_b64 = dict(pred)["bytesBase64Encoded"]
-    decoded_audio_data = base64.b64decode(bytes_b64)
-    return decoded_audio_data
-
+def create_silent_audio(duration=30):
+    """
+    Create a silent audio track as fallback.
+    Args:
+        duration (int): Duration in seconds
+    Returns:
+        bytes: Silent WAV audio data
+    """
+    try:
+        samplerate = 44100  # 44.1kHz
+        # Generate a silent numpy array
+        silent_array = np.zeros(int(samplerate * duration))
+        
+        # Use an in-memory bytes buffer
+        buffer = io.BytesIO()
+        write(buffer, samplerate, silent_array.astype(np.int16))
+        
+        return buffer.getvalue()
+    except Exception as e:
+        st.error(f"Error creating silent audio: {e}")
+        return b''
 
 def submit_to_firestore(data: dict):
     """
@@ -121,178 +320,408 @@ def submit_to_firestore(data: dict):
     This function requires authentication to be set up.
     """
     try:
-        # This is how you would initialize with secrets
-
-        creds = service_account.Credentials.from_service_account_info(
-            st.secrets["firestore"]
-        )
-        db = firestore.Client(
-            credentials=creds, project=st.secrets["firestore"]["project_id"]
-        )
+        creds = service_account.Credentials.from_service_account_info(st.secrets["firestore"])
+        db = firestore.Client(credentials=creds, project=st.secrets["firestore"]["project_id"])
 
         collection_ref = db.collection("user_responses")
-        collection_ref.add(data)
-        st.success("Your response were saved. Thank you 👻")
-
+        doc_ref = collection_ref.add(data)
+        st.success("Your responses were saved. Thank you! 💻")
         return True
-    except Exception:
-        st.error(f"Failed to submit to Firestore:\n{traceback.format_exc()}")
+    except Exception as e:
+        st.error(f"Failed to submit to Firestore: {str(e)[:200]}")
+        with st.expander("Error Details"):
+            st.code(traceback.format_exc())
         return False
 
+def restart_app():
+    """Clear all session state and restart the app."""
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.rerun()
 
 # --- STATE INITIALIZATION ---
 
 # Use session_state to store data across reruns and pages
-if "page_number" not in st.session_state:
+if 'page_number' not in st.session_state:
     st.session_state.page_number = 1
-if "user_info" not in st.session_state:
+if 'user_info' not in st.session_state:
     st.session_state.user_info = {}
-if "test_answers" not in st.session_state:
+if 'music_params' not in st.session_state:
+    st.session_state.music_params = {}
+if 'test_answers' not in st.session_state:
     st.session_state.test_answers = {}
-
+if 'generated_music_cache' not in st.session_state:
+    st.session_state.generated_music_cache = {}
 
 # --- PAGE RENDERING FUNCTIONS ---
-
 
 def render_page_1():
     """Renders the initial user information gathering page."""
     st.header("Welcome! Let's get to know you.")
-
-    # Use a form to batch inputs together
+    
+    st.markdown("""
+    This study will test how different types of music affect your focus and comprehension. 
+    We'll generate personalized music based on your preferences using AI.
+    """)
+    
+    # Basic user info form
     with st.form("user_info_form"):
-        music_style = st.text_input(
-            "What is your favourite music style?",
-            placeholder="e.g., Classical, Lo-fi, Rock",
-        )
+        st.subheader("📋 Basic Information")
         music_while_studying = st.radio(
-            "Do you listen to music while studying?", ("Yes", "No"), horizontal=True
+            "Do you usually listen to music while studying?", 
+            ("Yes", "No"), 
+            horizontal=True
         )
-        music_volume = st.select_slider(
-            "Do you prefer quiet or loud music?", options=["Quiet", "Moderate", "Loud"]
+        
+        st.subheader("🎵 Music Preferences")
+        
+        # Genre selection
+        genre = st.selectbox(
+            "What is your favorite music genre?",
+            ["Classical", "Lo-fi", "Jazz", "Ambient", "Electronic", "Acoustic", "Piano", "Rock", "Pop", "Hip Hop", "Other"],
+            help="Select the genre that best matches your preference"
         )
-
-        submitted = st.form_submit_button("Submit")
-
+        
+        other_genre = ""
+        if genre == "Other":
+            other_genre = st.text_input("Please specify your preferred genre:")
+        
+        # Volume with proper slider points
+        volume = st.select_slider(
+            "Preferred music volume level:",
+            options=["Very Quiet", "Quiet", "Moderate", "Loud", "Very Loud"],
+            value="Moderate",
+            help="Choose how loud you prefer your study music"
+        )
+        
+        # Tempo
+        tempo = st.select_slider(
+            "Preferred tempo (speed):",
+            options=["Very Slow", "Slow", "Moderate", "Fast", "Very Fast"],
+            value="Moderate",
+            help="Choose the speed/rhythm you prefer"
+        )
+        
+        # Mood
+        mood = st.selectbox(
+            "What mood do you prefer for study music?",
+            ["Calm", "Peaceful", "Energetic", "Focused", "Relaxed", "Uplifting", "Meditative"],
+            help="Select the emotional tone you find most helpful for studying"
+        )
+        
+        # Instruments (multi-select)
+        instruments = st.multiselect(
+            "Preferred instruments (optional):",
+            ["Piano", "Guitar", "Strings", "Synthesizer", "Flute", "Saxophone", "Drums", "Violin", "Cello", "Harp"],
+            help="Select specific instruments you'd like to hear (leave empty for any)"
+        )
+        
+        st.subheader("⚙️ Advanced Options")
+        
+        # Advanced options in expander
+        with st.expander("🔧 Advanced Music Parameters (Optional)"):
+            negative_prompt = st.text_area(
+                "What should the music NOT include?",
+                placeholder="e.g., vocals, sudden changes, aggressive sounds",
+                help="Describe what you want to avoid in the generated music"
+            )
+            
+            seed = st.number_input(
+                "Seed for reproducible music (optional):",
+                min_value=0,
+                max_value=9999,
+                value=0,
+                help="Use the same seed to get similar music each time (0 = random)"
+            )
+        
+        submitted = st.form_submit_button("🎵 Continue to Study Sessions", type="primary")
+        
         if submitted:
-            # Save the data to the session_state dictionary
+            final_genre = other_genre if genre == "Other" and other_genre.strip() else genre
+            
+            if not final_genre.strip():
+                st.error("Please specify your favorite music genre to continue.")
+                return
+            
+            # Save all parameters
             st.session_state.user_info = {
-                "favourite_music_style": music_style,
                 "music_while_studying": music_while_studying,
-                "preferred_volume": music_volume,
             }
+            
+            st.session_state.music_params = {
+                "genre": final_genre.strip(),
+                "volume": volume,
+                "tempo": tempo,
+                "mood": mood.lower(),
+                "instruments": instruments,
+                "negative_prompt": negative_prompt.strip(),
+                "seed": seed if seed > 0 else None
+            }
+            
             # Move to the next page
             st.session_state.page_number = 2
-            st.rerun()  # Use rerun to immediately show the next page
-
+            st.rerun()
 
 def render_test_page(page_num: int, with_music: bool):
     """A generic function to render a test page."""
-    st.header(f"Test Section {page_num - 1}")
+    
+    # Different test types for variety
+    test_types = {
+        2: {"title": "Reading Comprehension - Baseline", "icon": "📚", "description": "First, let's establish your baseline reading performance without any music."},
+        3: {"title": "Reading Comprehension - With Background Music", "icon": "🎵", "description": "Now let's see how background music affects your focus and comprehension."},
+        4: {"title": "Reading Comprehension - Extended Music Session", "icon": "🎼", "description": "Final test with a different passage and the same music style to confirm results."}
+    }
+    
+    test_info = test_types[page_num]
+    
+    st.header(f"{test_info['title']} {test_info['icon']}")
+    st.markdown(f"*{test_info['description']}*")
 
     # Use session_state to cache test content per page
     test_key = f"test_content_page_{page_num}"
     if test_key not in st.session_state:
-        decoded_audio_data = None
         test_text, question_obj_list = load_test_from_gemini()
-        if with_music:
-            # Use the user's preference from the first page as a prompt
-            music_prompt = f"""style: {st.session_state.user_info.get("favourite_music_style")}, volume: {st.session_state.user_info.get("preferred_volume")}"""
-            time.sleep(0.1)
-            decoded_audio_data = load_music(music_prompt)
-
-        st.session_state[test_key] = (test_text, question_obj_list, decoded_audio_data)
+        st.session_state[test_key] = (test_text, question_obj_list)
     else:
-        test_text, question_obj_list, decoded_audio_data = st.session_state[test_key]
+        test_text, question_obj_list = st.session_state[test_key]
 
-    if decoded_audio_data is not None:
-        st.audio(decoded_audio_data, autoplay=True, loop=True)
+    if with_music:
+        st.markdown("### 🎵 Background Music")
+        # Generate music based on user preferences
+        music_cache_key = f"music_page_{page_num}"
+        
+        if music_cache_key not in st.session_state.generated_music_cache:
+            audio_bytes = load_music(st.session_state.music_params)
+            st.session_state.generated_music_cache[music_cache_key] = audio_bytes
+        
+        audio_bytes = st.session_state.generated_music_cache[music_cache_key]
+        
+        if audio_bytes and len(audio_bytes) > 0:
+            st.audio(audio_bytes, format='audio/wav', loop=True)
+            st.caption("🎧 You can adjust the volume and loop the music using the controls above. Start the music before reading.")
+        else:
+            st.warning("Music generation failed. Continuing with silent study session.")
+            
+        st.divider()
 
+    st.markdown("### 📖 Reading Passage")
     st.markdown(test_text)
-
+    
     st.divider()
-
+    st.markdown("### ❓ Comprehension Questions")
+    
     # Store answers in a dictionary for this page
     page_answers = {}
     for i, question_obj in enumerate(question_obj_list):
-        # The key for each widget must be unique across the entire app
-        q = question_obj["text"]
+        q = question_obj['text']
         page_answers[q] = st.radio(
-            q, ("Yes", "No"), key=f"p{page_num}_q{i}", horizontal=True
+            q, 
+            ("Yes", "No"), 
+            key=f"p{page_num}_q{i}", 
+            horizontal=True
         )
-
-    if st.button("Next", key=f"next_p{page_num}"):
-        # evaluate the test answers
-        correct_count = 0
-        for question, correct_response in [
-            (question_obj["text"], question_obj["correct_response"])
-            for question_obj in question_obj_list
-        ]:
-            if page_answers[question] == correct_response:
-                correct_count += 1
-        page_answers["correct_count"] = correct_count
-
-        # Save this page's answers to the main state
-        st.session_state.test_answers[f"page_{page_num}"] = page_answers
-
-        # Increment page number and rerun
-        st.session_state.page_number += 1
-        st.rerun()
-
+    
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        if st.button("📝 Complete This Section", key=f"next_p{page_num}", type="primary"):
+            # evaluate the test answers
+            correct_count = 0
+            for question, correct_response in [(question_obj['text'], question_obj['correct_response']) for 
+                                                question_obj in question_obj_list]:
+                if page_answers[question] == correct_response: 
+                    correct_count += 1
+            
+            page_answers['correct_count'] = correct_count
+            page_answers['total_questions'] = len(question_obj_list)
+            page_answers['had_music'] = with_music
+            page_answers['test_type'] = test_info['title']
+            
+            # Save this page's answers to the main state
+            st.session_state.test_answers[f"page_{page_num}"] = page_answers
+            
+            # Show quick feedback
+            accuracy = (correct_count / len(question_obj_list)) * 100
+            st.success(f"✅ Section completed! Accuracy: {correct_count}/{len(question_obj_list)} ({accuracy:.1f}%)")
+            time.sleep(1.5)
+            
+            # Increment page number and rerun
+            st.session_state.page_number += 1
+            st.rerun()
+    
+    with col2:
+        if st.button("🔄 Restart Study", key=f"restart_p{page_num}", help="Start over from the beginning"):
+            restart_app()
 
 def render_final_page():
     """Renders the final thank you and submission page."""
-    st.header("Thank You!")
-    st.markdown("You have completed all sections. You can review your data below.")
-
-    # Display all collected data for user review
-    st.subheader("Your Preferences")
-    st.json(st.session_state.user_info)
-
-    st.subheader("Your Test Answers")
-    st.json(st.session_state.test_answers)
-
-    st.divider()
-
-    if st.button("Submit Final Data", type="primary"):
-        # Combine all data into one dictionary for submission
-        final_data = {
-            "user_info": st.session_state.user_info,
-            "test_answers": st.session_state.test_answers,
+    st.header("🎉 Study Complete!")
+    st.markdown("Thank you for participating in our music and focus study!")
+    
+    # Calculate and display results
+    st.subheader("📊 Your Performance Summary")
+    
+    results_summary = {}
+    music_sections = []
+    no_music_sections = []
+    
+    for page_key, answers in st.session_state.test_answers.items():
+        section_name = answers.get('test_type', 'Unknown')
+        had_music = answers.get('had_music', False)
+        score = answers.get('correct_count', 0)
+        total = answers.get('total_questions', 3)
+        percentage = (score / total * 100) if total > 0 else 0
+        
+        result_data = {
+            'score': score,
+            'total': total,
+            'percentage': percentage,
+            'section_name': section_name
         }
-
-        with st.spinner("Submitting your data to the database..."):
-            success = submit_to_firestore(final_data)
-            if success:
-                st.success(
-                    "Your submission was successful! Thank you for participating."
-                )
-                st.balloons()
-                # Optionally clear the state after submission
-                for key in st.session_state.keys():
-                    del st.session_state[key]
-
+        
+        if had_music:
+            music_sections.append(result_data)
+        else:
+            no_music_sections.append(result_data)
+        
+        results_summary[section_name] = result_data
+    
+    # Display results in columns
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### 📚 Without Music")
+        for section in no_music_sections:
+            st.metric(
+                label="Baseline Score",
+                value=f"{section['score']}/{section['total']}",
+                delta=f"{section['percentage']:.1f}%"
+            )
+    
+    with col2:
+        st.markdown("#### 🎵 With Music")
+        music_scores = []
+        for section in music_sections:
+            music_scores.append(section['percentage'])
+            st.metric(
+                label=f"Music Session {len(music_scores)}",
+                value=f"{section['score']}/{section['total']}",
+                delta=f"{section['percentage']:.1f}%"
+            )
+    
+    # Performance comparison
+    if no_music_sections and music_sections:
+        baseline_avg = sum([s['percentage'] for s in no_music_sections]) / len(no_music_sections)
+        music_avg = sum([s['percentage'] for s in music_sections]) / len(music_sections)
+        difference = music_avg - baseline_avg
+        
+        st.markdown("#### 📈 Performance Analysis")
+        if difference > 5:
+            st.success(f"🎵 Music improved your performance by {difference:.1f} percentage points!")
+        elif difference < -5:
+            st.info(f"📚 You performed {abs(difference):.1f} percentage points better without music.")
+        else:
+            st.info("📊 Music had minimal impact on your performance (within 5% difference).")
+    
+    # Show music preferences used
+    st.subheader("🎵 Your Music Configuration")
+    music_params = st.session_state.music_params
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"**Genre:** {music_params.get('genre', 'N/A')}")
+        st.write(f"**Tempo:** {music_params.get('tempo', 'N/A')}")
+        st.write(f"**Mood:** {music_params.get('mood', 'N/A').title()}")
+    with col2:
+        st.write(f"**Volume:** {music_params.get('volume', 'N/A')}")
+        st.write(f"**Instruments:** {', '.join(music_params.get('instruments', [])) or 'Any'}")
+        st.write(f"**Study Habit:** {st.session_state.user_info.get('music_while_studying', 'N/A')}")
+    
+    st.divider()
+    
+    # Optional: Show detailed data for review (collapsed by default)
+    with st.expander("📋 View Detailed Data (Optional)"):
+        st.subheader("Music Parameters")
+        st.json(st.session_state.music_params)
+        
+        st.subheader("Test Results")
+        st.json(st.session_state.test_answers)
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        if st.button("📤 Submit Results to Research Database", type="primary"):
+            # Combine all data into one dictionary for submission
+            final_data = {
+                "timestamp": time.time(),
+                "user_info": st.session_state.user_info,
+                "music_params": st.session_state.music_params,
+                "test_answers": st.session_state.test_answers,
+                "results_summary": results_summary,
+                "performance_analysis": {
+                    "baseline_avg": baseline_avg if no_music_sections else 0,
+                    "music_avg": music_avg if music_sections else 0,
+                    "improvement": difference if (no_music_sections and music_sections) else 0
+                }
+            }
+            
+            with st.spinner("Submitting your data to the research database..."):
+                success = submit_to_firestore(final_data)
+                if success:
+                    st.success("✅ Your results have been submitted successfully! Thank you for contributing to our research.")
+                    st.balloons()
+    
+    with col2:
+        if st.button("🔄 Start New Study", help="Clear all data and start a new study session"):
+            restart_app()
 
 # --- MAIN APP ROUTER ---
-# kdkfj
-# jfkdjfdkj
-st.title("Interactive Music & Focus Study")
 
-# This acts as a simple router based on the page number in the session state
-page = st.session_state.page_number
+st.set_page_config(
+    page_title="Music & Focus Study",
+    page_icon="🎵",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-if page == 1:
-    render_page_1()
-elif page == 2:
-    render_test_page(page_num=2, with_music=False)
-elif page == 3:
-    render_test_page(page_num=3, with_music=True)
-elif page == 4:
-    render_test_page(page_num=4, with_music=True)
-elif page == 5:
-    render_final_page()
-else:
-    st.warning("Something went wrong. Please refresh.")
-    # Add a button to reset the session
-    if st.button("Start Over"):
-        st.session_state.page_number = 1
-        st.rerun()
+# Header with restart option
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.title("🎵 Interactive Music & Focus Study")
+with col2:
+    if st.button("🔄 Restart", key="header_restart", help="Start over from beginning"):
+        restart_app()
+
+# Add progress indicator
+if st.session_state.page_number <= 5:
+    progress = (st.session_state.page_number - 1) / 4
+    st.progress(progress, text=f"Step {st.session_state.page_number} of 5")
+
+# Error boundary wrapper
+try:
+    page = st.session_state.page_number
+
+    if page == 1:
+        render_page_1()
+    elif page == 2:
+        render_test_page(page_num=2, with_music=False)
+    elif page == 3:
+        render_test_page(page_num=3, with_music=True)
+    elif page == 4:
+        render_test_page(page_num=4, with_music=True)
+    elif page == 5:
+        render_final_page()
+    else:
+        st.error("Invalid page state detected.")
+        if st.button("🔄 Reset Application"):
+            restart_app()
+
+except Exception as e:
+    st.error("An unexpected error occurred. Please restart the application.")
+    st.code(f"Error: {str(e)}")
+    
+    with st.expander("Error Details"):
+        st.code(traceback.format_exc())
+    
+    if st.button("🔄 Restart Application", type="primary"):
+        restart_app()

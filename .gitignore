@@ -1,1 +1,8 @@
 *.toml
+*.json
+ai_music/
+.vscode/
+__pycache__/
+.streamlit/
+ 
+ 
