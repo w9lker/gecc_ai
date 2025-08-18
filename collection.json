@@ -1,0 +1,174 @@
+{
+  "passages": [
+    {
+      "generated_text": "The sun is a star at the center of our solar system. It is a nearly perfect sphere of hot plasma, with its diameter being about 109 times that of Earth. Three-quarters of the Sun's mass consists of hydrogen; the rest is mostly helium. The remaining 1.69% consists of heavier elements, including oxygen, carbon, and iron.",
+      "questions": [
+        {
+          "text": "Is the sun's diameter smaller than Earth's?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does the sun primarily consist of helium?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the sun considered a planet?",
+          "correct_response": "No"
+        }
+      ]
+    },
+    {
+      "generated_text": "Photosynthesis is a process used by plants, algae, and certain bacteria to convert light energy into chemical energy. During photosynthesis, these organisms take in carbon dioxide from the air and water from the soil. Using the energy from sunlight, they convert these ingredients into glucose, a type of sugar that provides energy, and oxygen, which is released back into the atmosphere.",
+      "questions": [
+        {
+          "text": "Is oxygen a primary ingredient taken in during photosynthesis?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Do plants release carbon dioxide as a product of photosynthesis?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is glucose a form of chemical energy produced by this process?",
+          "correct_response": "Yes"
+        }
+      ]
+    },
+    {
+      "generated_text": "The Great Wall of China is a series of fortifications made of stone, brick, and other materials, built along the historical northern borders of ancient Chinese states to protect against invasions. The majority of the existing wall is from the Ming Dynasty (1368–1644). Contrary to popular belief, it is not a single continuous wall but a system of walls, watchtowers, and fortresses.",
+      "questions": [
+        {
+          "text": "Was the Great Wall built primarily for decorative purposes?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the Great Wall a single, unbroken structure?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Was most of the wall we see today built during the Ming Dynasty?",
+          "correct_response": "Yes"
+        }
+      ]
+    },
+    {
+      "generated_text": "Honeybees are social flying insects known for their construction of perennial colonial nests from wax, the large size of their colonies, and their surplus production and storage of honey. A colony generally consists of a single queen, thousands of female worker bees, and, in certain seasons, a number of male drones. The worker bees are responsible for foraging for nectar and pollen.",
+      "questions": [
+        {
+          "text": "Are honeybee colonies run by multiple queens?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Are the male drones responsible for collecting nectar?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Do honeybees build their nests from wax?",
+          "correct_response": "Yes"
+        }
+      ]
+    },
+    {
+      "generated_text": "The Amazon rainforest is the largest tropical rainforest in the world, covering an area of over 5.5 million square kilometers. It is home to an incredible diversity of species, including an estimated 10% of the world's known species. The Amazon River, the second-longest river in the world, flows through the rainforest. The region plays a critical role in regulating the global climate.",
+      "questions": [
+        {
+          "text": "Is the Amazon the largest desert in the world?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does the Amazon River hold the title for the longest river in the world?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does the Amazon rainforest contain more than half of the world's known species?",
+          "correct_response": "No"
+        }
+      ]
+    },
+    {
+      "generated_text": "The Python programming language was created by Guido van Rossum and first released in 1991. Its design philosophy emphasizes code readability with its notable use of significant indentation. Python is dynamically-typed and garbage-collected. It supports multiple programming paradigms, including structured, object-oriented, and functional programming. It is not named after the snake.",
+      "questions": [
+        {
+          "text": "Was Python first released before 1990?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does Python use curly braces to define code blocks, similar to C++ or Java?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does Python's design philosophy prioritize code readability?",
+          "correct_response": "Yes"
+        }
+      ]
+    },
+    {
+      "generated_text": "The human brain is a complex organ that controls thought, memory, emotion, touch, motor skills, vision, and every process that regulates our body. Protected within the skull, the brain is composed of the cerebrum, cerebellum, and brainstem. The cerebrum is the largest part and is divided into two hemispheres. It performs higher functions like interpreting touch and vision.",
+      "questions": [
+        {
+          "text": "Is the cerebellum the largest part of the human brain?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the brain composed of four main parts?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the brain protected by the skull?",
+          "correct_response": "Yes"
+        }
+      ]
+    },
+    {
+      "generated_text": "Mount Everest, located in the Himalayas, is Earth's highest mountain above sea level, with its peak at 8,848.86 meters (29,031.7 ft). The first confirmed ascent was made by Tenzing Norgay and Edmund Hillary in 1953. The mountain presents many dangers, such as extreme cold, unpredictable weather, and altitude sickness. It is not the tallest mountain from base-to-peak; that title belongs to Mauna Kea.",
+      "questions": [
+        {
+          "text": "Is Mount Everest located in the Andes mountain range?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Was the first successful ascent of Everest in the 1960s?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is Mount Everest the tallest mountain on Earth when measured from its base on the ocean floor?",
+          "correct_response": "No"
+        }
+      ]
+    },
+    {
+      "generated_text": "The printing press, invented by Johannes Gutenberg around 1440, was a revolutionary invention that enabled the mass production of books and the rapid dissemination of knowledge throughout Europe. Before its invention, books were painstakingly copied by hand, making them rare and expensive. Gutenberg's press used movable type, which allowed for much faster and more efficient printing.",
+      "questions": [
+        {
+          "text": "Was the printing press invented in the 16th century?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the printing press make books more expensive for the average person?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did Gutenberg's invention use a technology called movable type?",
+          "correct_response": "Yes"
+        }
+      ]
+    },
+    {
+      "generated_text": "The Pacific Ocean is the largest and deepest of the world's five oceans. It extends from the Arctic Ocean in the north to the Southern Ocean in the south and is bounded by the continents of Asia and Australia in the west and the Americas in the east. The Mariana Trench, the deepest known point on Earth, is located in the western Pacific. The ocean's name was coined by explorer Ferdinand Magellan.",
+      "questions": [
+        {
+          "text": "Is the Atlantic Ocean larger than the Pacific Ocean?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the Mariana Trench located in the Atlantic Ocean?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does the Pacific Ocean border the continent of Africa?",
+          "correct_response": "No"
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import json
+import random
 import time
 import streamlit as st
 import numpy as np
@@ -11,7 +12,6 @@ import google.auth.transport.requests
 import traceback
 import requests
 import wave
-from google import genai
 
 # --- HELPER FUNCTIONS  ---
 TEXT_GENERATION_PROMPT = """
@@ -20,6 +20,11 @@ TEXT_GENERATION_PROMPT = """
     - "generated_text": the passage as a string,
     - "questions": a list of objects, each with "text" (the question) and "correct_response" ("Yes" or "No").
 """
+
+with open("collection.json", "r", encoding="utf-8") as f:
+    available_passages = json.load(f)["passages"]
+print(available_passages)
+random.shuffle(available_passages)
 
 
 def get_access_token_for_lyria() -> str:
@@ -154,47 +159,10 @@ def create_music_prompt(music_params: dict) -> tuple:
         return "ambient calm music for studying", "vocals, lyrics"
 
 
-def load_test_from_gemini(max_retries=7, retry_delay=5):
-    """
-    Calls Gemini to generate a reading passage and questions.
-    Retries on rate limit errors.
-    Returns:
-        tuple: (generated_text: str, questions: list of dicts)
-    """
-    with st.spinner("Loading test from Gemini..."):
-        for attempt in range(1, max_retries + 1):
-            try:
-                client = genai.Client(api_key=st.secrets["gemini"]["api_key"])
-
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=TEXT_GENERATION_PROMPT,
-                ).text
-
-                # Parse the JSON from Gemini's response
-                data = json.loads(response)
-                generated_text = data["generated_text"]
-                questions = data["questions"]
-                return generated_text, questions
-            except Exception as e:
-                error_msg = str(e)
-                if (
-                    "rate limit" in error_msg.lower() or "429" in error_msg
-                ) and attempt < max_retries:
-                    st.warning(
-                        f"Rate limit hit, retrying in {retry_delay} seconds... (attempt {attempt}/{max_retries})"
-                    )
-                    time.sleep(retry_delay)
-                    continue
-                elif "rate limit" in error_msg.lower() or "429" in error_msg:
-                    st.error("Rate limit reached. Maximum retries exceeded.")
-                    return (
-                        "Error loading test (rate limit). Please try again later.",
-                        [],
-                    )
-                else:
-                    st.error(f"Failed to load test from Gemini: {str(e)[:200]}")
-                    return "Error loading test. Please try again.", []
+def load_passage():
+    # load the passage from the passages in the rotation
+    passage = available_passages.pop()  # guaranteed not to end
+    return passage["generated_text"], passage["questions"]
 
 
 def load_music(music_params: dict, max_retries=3):
@@ -564,7 +532,7 @@ def render_test_page(page_num: int, with_music: bool):
     # Use session_state to cache test content per page
     test_key = f"test_content_page_{page_num}"
     if test_key not in st.session_state:
-        test_text, question_obj_list = load_test_from_gemini()
+        test_text, question_obj_list = load_passage()
         st.session_state[test_key] = (test_text, question_obj_list)
     else:
         test_text, question_obj_list = st.session_state[test_key]
@@ -581,7 +549,7 @@ def render_test_page(page_num: int, with_music: bool):
         audio_bytes = st.session_state.generated_music_cache[music_cache_key]
 
         if audio_bytes and len(audio_bytes) > 0:
-            st.audio(audio_bytes, format="audio/wav", loop=True)
+            st.audio(audio_bytes, format="audio/wav", loop=True, autoplay=True)
             st.caption(
                 "🎧 You can adjust the volume and loop the music using the controls above. Start the music before reading."
             )
