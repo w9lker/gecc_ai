@@ -182,6 +182,7 @@ def load_music(music_params: dict, max_retries=3):
 
         # Create detailed prompt
         music_prompt, negative_prompt = create_music_prompt(music_params)
+        time.sleep(0.1)
 
         with st.expander("🎵 Music Generation Details", expanded=False):
             st.write(f"**Main Prompt:** {music_prompt}")
