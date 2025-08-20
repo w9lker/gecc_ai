@@ -363,6 +363,7 @@ def render_page_1():
     """Renders the initial user information gathering page."""
     st.header("Welcome! Let's get to know you.")
 
+    email = st.text_input("What is your email")
     st.markdown("""
     This study will test how different types of music affect your focus and comprehension. 
     We'll generate personalized music based on your preferences using AI.
@@ -485,6 +486,7 @@ def render_page_1():
             # Save all parameters
             st.session_state.user_info = {
                 "music_while_studying": music_while_studying,
+                "email": email,
             }
 
             st.session_state.music_params = {
