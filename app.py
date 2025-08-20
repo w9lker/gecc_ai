@@ -725,31 +725,27 @@ def render_final_page():
 
     col1, col2 = st.columns([2, 1])
 
-    with col1:
-        if st.button("📤 Submit Results to Research Database", type="primary"):
-            # Combine all data into one dictionary for submission
-            final_data = {
-                "timestamp": time.time(),
-                "user_info": st.session_state.user_info,
-                "music_params": st.session_state.music_params,
-                "test_answers": st.session_state.test_answers,
-                "results_summary": results_summary,
-                "performance_analysis": {
-                    "baseline_avg": baseline_avg if no_music_sections else 0,
-                    "music_avg": music_avg if music_sections else 0,
-                    "improvement": difference
-                    if (no_music_sections and music_sections)
-                    else 0,
-                },
-            }
+    # Combine all data into one dictionary for submission
+    final_data = {
+        "timestamp": time.time(),
+        "user_info": st.session_state.user_info,
+        "music_params": st.session_state.music_params,
+        "test_answers": st.session_state.test_answers,
+        "results_summary": results_summary,
+        "performance_analysis": {
+            "baseline_avg": baseline_avg if no_music_sections else 0,
+            "music_avg": music_avg if music_sections else 0,
+            "improvement": difference if (no_music_sections and music_sections) else 0,
+        },
+    }
 
-            with st.spinner("Submitting your data to the research database..."):
-                success = submit_to_firestore(final_data)
-                if success:
-                    st.success(
-                        "✅ Your results have been submitted successfully! Thank you for contributing to our research."
-                    )
-                    st.balloons()
+    with st.spinner("Submitting your data to the research database..."):
+        success = submit_to_firestore(final_data)
+        if success:
+            st.success(
+                "✅ Your results have been submitted successfully! Thank you for contributing to our research."
+            )
+            st.balloons()
 
     with col2:
         if st.button(
