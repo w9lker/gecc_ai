@@ -326,7 +326,7 @@ def render_page_1():
                 contents=finetune_prompt,
             )
         except Exception:
-            # st.error(f"Error refining prompt: {e}")
+            st.error(f"Error refining prompt: {e}")
             return prompt  # Return original if error
         return response.text if response else prompt
 
