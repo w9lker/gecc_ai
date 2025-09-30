@@ -317,7 +317,7 @@ def render_page_1():
                 With Lyria 2, you can generate a 30 second WAV audio at a 48kHz sample rate from a text prompt. In order to generate an audio clip in the following sample, specify the following info:
                 
                 With this in mind, please give me back a pure finetuned prompt, given {prompt}.
-                Be as detailed as possible and avoid short prompts.
+                Be as detailed and avoid short or long prompts.
             """
         try:
             client = genai.Client(api_key=st.secrets["gemini"]["api_key"])
