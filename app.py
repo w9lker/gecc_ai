@@ -12,6 +12,7 @@ import google.auth.transport.requests
 import traceback
 import requests
 import wave
+from google import genai
 
 # --- HELPER FUNCTIONS  ---
 TEXT_GENERATION_PROMPT = """
@@ -79,6 +80,15 @@ def create_music_prompt(music_params: dict) -> tuple:
     Returns: (prompt, negative_prompt)
     """
     try:
+        # Check if alternative prompt is provided
+        alternative_prompt = music_params.get("alternative_prompt", "").strip()
+        if alternative_prompt:
+            # Use the alternative prompt directly, ignoring all other parameters
+            return alternative_prompt, music_params.get(
+                "negative_prompt", "vocals, lyrics"
+            )
+
+        # Otherwise, use the original logic
         # Base style/genre
         genre = music_params.get("genre", "ambient")
 
@@ -187,6 +197,10 @@ def load_music(music_params: dict, max_retries=3):
         with st.expander("🎵 Music Generation Details", expanded=False):
             st.write(f"**Main Prompt:** {music_prompt}")
             st.write(f"**Negative Prompt:** {negative_prompt}")
+            if music_params.get("alternative_prompt"):
+                st.info(
+                    "Using custom alternative prompt - all other parameters ignored"
+                )
 
         # Set up API endpoint
         project_id = st.secrets["lyria"]["project_id"]
@@ -370,6 +384,46 @@ def render_page_1():
     We'll generate personalized music based on your preferences using AI.
     """)
 
+    with st.expander(
+        "Provice a custom prompt (OPTIONAL, but preffered if you want highly specific music)"
+    ):
+        st.markdown("#### 🎯 Custom Music Prompt (Optional)")
+        alternative_prompt = st.text_area(
+            "Enter a complete custom prompt for music generation:",
+            placeholder="Example: Create a dreamy soundscape with soft rain sounds, distant thunder, and ethereal synthesizers at 60 BPM, reminiscent of Brian Eno's ambient works",
+            help="If you provide a custom prompt, it will override all the selections below",
+            height=80,
+        )
+
+        if alternative_prompt.strip():
+            st.info("ℹ️ Custom prompt provided - the selections below will be ignored")
+
+        # finetune prompt with AI - call gemini api
+        def finetune_text(prompt):
+            finetune_prompt = """
+                    When prompting Lyria 2 it's helpful to consider the overall style of music you want to generate. Consider options such as: classical, electronic, rock, jazz, hip hop, or pop. You can even describe more general styles that include cinematic, ambient, or lo-fi.
+                    With Lyria 2, you can generate a 30 second WAV audio at a 48kHz sample rate from a text prompt. In order to generate an audio clip in the following sample, specify the following info:
+                    Prompt: A detailed description of the music you would like to generate.
+                    
+                    With this in mind, please give me back a pure finetuned prompt, given {prompt}
+                """
+            try:
+                client = genai.Client(api_key=st.secrets["gemini"]["api_key"])
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=finetune_prompt,
+                )
+            except Exception:
+                # st.error(f"Error refining prompt: {e}")
+                return prompt  # Return original if error
+            return response.text if response else prompt
+
+        if st.button("🔄 Refine Prompt with AI"):
+            with st.spinner("Refining your prompt..."):
+                refined = finetune_text(alternative_prompt.strip())
+            st.info(f"Refined Prompt: {refined}")
+            alternative_prompt = refined
+
     # Basic user info form
     with st.form("user_info_form"):
         st.subheader("📋 Basic Information")
@@ -381,79 +435,84 @@ def render_page_1():
 
         st.subheader("🎵 Music Preferences")
 
-        # Genre selection
-        genre = st.selectbox(
-            "What is your favorite music genre?",
-            [
-                "Classical",
-                "Lo-fi",
-                "Jazz",
-                "Ambient",
-                "Electronic",
-                "Acoustic",
-                "Piano",
-                "Rock",
-                "Pop",
-                "Hip Hop",
-                "Other",
-            ],
-            help="Select the genre that best matches your preference",
-        )
+        # Alternative prompt option at the to
+        with st.expander("Music params"):
+            st.markdown("---")
+            st.markdown("#### 🎛️ Or Choose Your Preferences")
 
-        other_genre = ""
-        if genre == "Other":
-            other_genre = st.text_input("Please specify your preferred genre:")
+            # Genre selection
+            genre = st.selectbox(
+                "What is your favorite music genre?",
+                [
+                    "Classical",
+                    "Lo-fi",
+                    "Jazz",
+                    "Ambient",
+                    "Electronic",
+                    "Acoustic",
+                    "Piano",
+                    "Rock",
+                    "Pop",
+                    "Hip Hop",
+                    "Other",
+                ],
+                help="Select the genre that best matches your preference",
+            )
 
-        # Volume with proper slider points
-        volume = st.select_slider(
-            "Preferred music volume level:",
-            options=["Very Quiet", "Quiet", "Moderate", "Loud", "Very Loud"],
-            value="Moderate",
-            help="Choose how loud you prefer your study music",
-        )
+            other_genre = ""
+            if genre == "Other":
+                other_genre = st.text_input("Please specify your preferred genre:")
 
-        # Tempo
-        tempo = st.select_slider(
-            "Preferred tempo (speed):",
-            options=["Very Slow", "Slow", "Moderate", "Fast", "Very Fast"],
-            value="Moderate",
-            help="Choose the speed/rhythm you prefer",
-        )
+            # Volume with proper slider points
+            volume = st.select_slider(
+                "Preferred music volume level:",
+                options=["Very Quiet", "Quiet", "Moderate", "Loud", "Very Loud"],
+                value="Moderate",
+                help="Choose how loud you prefer your study music",
+            )
 
-        # Mood
-        mood = st.selectbox(
-            "What mood do you prefer for study music?",
-            [
-                "Calm",
-                "Peaceful",
-                "Energetic",
-                "Focused",
-                "Relaxed",
-                "Uplifting",
-                "Meditative",
-            ],
-            help="Select the emotional tone you find most helpful for studying",
-        )
+            # Tempo
+            tempo = st.select_slider(
+                "Preferred tempo (speed):",
+                options=["Very Slow", "Slow", "Moderate", "Fast", "Very Fast"],
+                value="Moderate",
+                help="Choose the speed/rhythm you prefer",
+            )
 
-        # Instruments (multi-select)
-        instruments = st.multiselect(
-            "Preferred instruments (optional):",
-            [
-                "Piano",
-                "Guitar",
-                "Strings",
-                "Synthesizer",
-                "Flute",
-                "Saxophone",
-                "Drums",
-                "Violin",
-                "Cello",
-                "Harp",
-            ],
-            help="Select specific instruments you'd like to hear (leave empty for any)",
-        )
+            # Mood
+            mood = st.selectbox(
+                "What mood do you prefer for study music?",
+                [
+                    "Calm",
+                    "Peaceful",
+                    "Energetic",
+                    "Focused",
+                    "Relaxed",
+                    "Uplifting",
+                    "Meditative",
+                ],
+                help="Select the emotional tone you find most helpful for studying",
+            )
 
-        st.subheader("⚙️ Advanced Options")
+            # Instruments (multi-select)
+            instruments = st.multiselect(
+                "Preferred instruments (optional):",
+                [
+                    "Piano",
+                    "Guitar",
+                    "Strings",
+                    "Synthesizer",
+                    "Flute",
+                    "Saxophone",
+                    "Drums",
+                    "Violin",
+                    "Cello",
+                    "Harp",
+                ],
+                help="Select specific instruments you'd like to hear (leave empty for any)",
+            )
+
+            st.subheader("⚙️ Advanced Options")
 
         # Advanced options in expander
         with st.expander("🔧 Advanced Music Parameters (Optional)"):
@@ -463,42 +522,58 @@ def render_page_1():
                 help="Describe what you want to avoid in the generated music",
             )
 
-            seed = st.number_input(
-                "Seed for reproducible music (optional):",
-                min_value=0,
-                max_value=9999,
-                value=0,
-                help="Use the same seed to get similar music each time (0 = random)",
-            )
-
         submitted = st.form_submit_button(
             "🎵 Continue to Study Sessions", type="primary"
         )
 
         if submitted:
-            final_genre = (
-                other_genre if genre == "Other" and other_genre.strip() else genre
-            )
+            # Check if using alternative prompt or regular parameters
+            if alternative_prompt.strip():
+                # Using alternative prompt - store it and minimal other info
+                st.session_state.user_info = {
+                    "music_while_studying": music_while_studying,
+                    "email": email,
+                }
 
-            if not final_genre.strip():
-                st.error("Please specify your favorite music genre to continue.")
-                return
+                st.session_state.music_params = {
+                    "alternative_prompt": alternative_prompt.strip(),
+                    "negative_prompt": negative_prompt.strip()
+                    if negative_prompt.strip()
+                    else "vocals, lyrics",
+                    "seed": None,
+                    # Store other params for record-keeping even though they won't be used
+                    "genre": genre,
+                    "volume": volume,
+                    "tempo": tempo,
+                    "mood": mood.lower(),
+                    "instruments": instruments,
+                }
+            else:
+                # Using regular parameters
+                final_genre = (
+                    other_genre if genre == "Other" and other_genre.strip() else genre
+                )
 
-            # Save all parameters
-            st.session_state.user_info = {
-                "music_while_studying": music_while_studying,
-                "email": email,
-            }
+                if not final_genre.strip():
+                    st.error("Please specify your favorite music genre to continue.")
+                    return
 
-            st.session_state.music_params = {
-                "genre": final_genre.strip(),
-                "volume": volume,
-                "tempo": tempo,
-                "mood": mood.lower(),
-                "instruments": instruments,
-                "negative_prompt": negative_prompt.strip(),
-                "seed": seed if seed > 0 else None,
-            }
+                # Save all parameters
+                st.session_state.user_info = {
+                    "music_while_studying": music_while_studying,
+                    "email": email,
+                }
+
+                st.session_state.music_params = {
+                    "genre": final_genre.strip(),
+                    "volume": volume,
+                    "tempo": tempo,
+                    "mood": mood.lower(),
+                    "instruments": instruments,
+                    "negative_prompt": negative_prompt.strip(),
+                    "seed": None,
+                    "alternative_prompt": "",  # Empty for regular flow
+                }
 
             # Move to the next page
             st.session_state.page_number = 2
@@ -561,19 +636,21 @@ def render_test_page(page_num: int, with_music: bool):
 
         st.divider()
 
-    st.markdown("### 📖 Reading Passage")
-    st.markdown(test_text)
+    col_left, col_right = st.columns([3, 1])
+    with col_left:
+        st.markdown("### 📖 Reading Passage")
+        st.markdown(test_text)
 
-    st.divider()
-    st.markdown("### ❓ Comprehension Questions")
+    with col_right:
+        st.markdown("### ❓ Comprehension Questions")
 
-    # Store answers in a dictionary for this page
-    page_answers = {}
-    for i, question_obj in enumerate(question_obj_list):
-        q = question_obj["text"]
-        page_answers[q] = st.radio(
-            q, ("Yes", "No"), key=f"p{page_num}_q{i}", horizontal=True
-        )
+        # Store answers in a dictionary for this page
+        page_answers = {}
+        for i, question_obj in enumerate(question_obj_list):
+            q = question_obj["text"]
+            page_answers[q] = st.radio(
+                q, ("Yes", "No"), key=f"p{page_num}_q{i}", horizontal=True
+            )
 
     col1, col2 = st.columns([3, 1])
 
@@ -700,19 +777,25 @@ def render_final_page():
     st.subheader("🎵 Your Music Configuration")
     music_params = st.session_state.music_params
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"**Genre:** {music_params.get('genre', 'N/A')}")
-        st.write(f"**Tempo:** {music_params.get('tempo', 'N/A')}")
-        st.write(f"**Mood:** {music_params.get('mood', 'N/A').title()}")
-    with col2:
-        st.write(f"**Volume:** {music_params.get('volume', 'N/A')}")
-        st.write(
-            f"**Instruments:** {', '.join(music_params.get('instruments', [])) or 'Any'}"
-        )
-        st.write(
-            f"**Study Habit:** {st.session_state.user_info.get('music_while_studying', 'N/A')}"
-        )
+    # Check if alternative prompt was used
+    if music_params.get("alternative_prompt"):
+        st.info("🎯 Custom prompt was used for music generation")
+        st.write(f"**Custom Prompt:** {music_params.get('alternative_prompt', 'N/A')}")
+        st.write(f"**Negative Prompt:** {music_params.get('negative_prompt', 'N/A')}")
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Genre:** {music_params.get('genre', 'N/A')}")
+            st.write(f"**Tempo:** {music_params.get('tempo', 'N/A')}")
+            st.write(f"**Mood:** {music_params.get('mood', 'N/A').title()}")
+        with col2:
+            st.write(f"**Volume:** {music_params.get('volume', 'N/A')}")
+            st.write(
+                f"**Instruments:** {', '.join(music_params.get('instruments', [])) or 'Any'}"
+            )
+            st.write(
+                f"**Study Habit:** {st.session_state.user_info.get('music_while_studying', 'N/A')}"
+            )
 
     st.divider()
 

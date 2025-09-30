@@ -1,171 +1,251 @@
 {
   "passages": [
     {
-      "generated_text": "The sun is a star at the center of our solar system. It is a nearly perfect sphere of hot plasma, with its diameter being about 109 times that of Earth. Three-quarters of the Sun's mass consists of hydrogen; the rest is mostly helium. The remaining 1.69% consists of heavier elements, including oxygen, carbon, and iron.",
+      "generated_text": "Epigenetics describes heritable changes in gene expression that do not involve alterations to the underlying DNA sequence. These modifications, such as DNA methylation and histone modification, act as a layer of control on top of the genome, influencing which genes are turned on or off. DNA methylation typically involves adding a methyl group to cytosine bases, which often leads to gene silencing by making the DNA less accessible to transcription machinery. Conversely, histone acetylation tends to 'loosen' the coiling of DNA around histone proteins, creating a more open chromatin structure (euchromatin) that facilitates gene expression. While it was once believed that these epigenetic marks were completely erased during gametogenesis, there is growing evidence for transgenerational epigenetic inheritance, where environmental factors experienced by one generation can influence the phenotype of subsequent generations. For instance, studies on plants have shown that exposure to drought can lead to heritable changes in gene expression that confer increased drought tolerance in offspring. The rate of epigenetic mutations, such as changes in methylation patterns, is significantly higher than the rate of traditional genetic mutations, providing a potential mechanism for rapid adaptation. However, a key feature of epigenetics is its reversibility; unlike DNA mutations, epigenetic marks can be added or removed in response to environmental cues or through therapeutic intervention, which is a promising avenue for treating diseases like cancer. The extent to which these mechanisms contribute to long-term evolutionary change in animals is still a subject of intense debate, as many modifications are often reversed within a few generations.",
       "questions": [
         {
-          "text": "Is the sun's diameter smaller than Earth's?",
+          "text": "Are epigenetic changes permanent alterations to the DNA sequence?",
           "correct_response": "No"
         },
         {
-          "text": "Does the sun primarily consist of helium?",
+          "text": "Is there conclusive evidence that transgenerational epigenetic inheritance is a major driver of long-term evolution in all animals?",
           "correct_response": "No"
         },
         {
-          "text": "Is the sun considered a planet?",
+          "text": "Does DNA methylation generally make genes more active and easier to transcribe?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Are epigenetic modifications considered fundamentally irreversible?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the rate of epigenetic change generally slower than the rate of genetic mutation?",
           "correct_response": "No"
         }
       ]
     },
     {
-      "generated_text": "Photosynthesis is a process used by plants, algae, and certain bacteria to convert light energy into chemical energy. During photosynthesis, these organisms take in carbon dioxide from the air and water from the soil. Using the energy from sunlight, they convert these ingredients into glucose, a type of sugar that provides energy, and oxygen, which is released back into the atmosphere.",
+      "generated_text": "The interpretation of quantum mechanics has profound philosophical implications, fundamentally challenging classical notions of reality and causality. At its heart is the wave function, a mathematical description of a quantum system's state, which includes concepts like superposition, where a particle can exist in multiple states simultaneously until a measurement is made. The Copenhagen interpretation, long the dominant view, suggests that the act of observation collapses the wave function, forcing a single, probabilistic outcome. This implies that the observer plays a crucial role in defining reality. In contrast, the Many-Worlds Interpretation, proposed by Hugh Everett III, posits that the wave function never collapses. Instead, every possible outcome of a quantum measurement occurs in a separate, parallel universe, thus preserving determinism at the cost of an unobservable multiverse. Another approach, Pilot-Wave Theory (or Bohmian Mechanics), also preserves determinism by postulating 'hidden variables' that guide the particle's trajectory, meaning its position and momentum are always definite, just unknown to us. A further layer of complexity is quantum entanglement, where linked particles instantaneously affect each other's state regardless of distance, an effect Einstein called 'spooky action at a distance' because it appears to violate the principle of locality. The modern concept of quantum decoherence helps explain the transition from the quantum to the classical world, suggesting that a quantum system's interaction with its environment causes it to lose its quantum properties (like superposition) and appear to collapse, without needing a conscious observer. Despite its incredible predictive success, there is no consensus on what quantum mechanics ultimately says about the nature of reality.",
       "questions": [
         {
-          "text": "Is oxygen a primary ingredient taken in during photosynthesis?",
+          "text": "Does the Copenhagen interpretation suggest that quantum reality is deterministic and independent of the observer?",
           "correct_response": "No"
         },
         {
-          "text": "Do plants release carbon dioxide as a product of photosynthesis?",
+          "text": "Does the Many-Worlds Interpretation propose that all possible quantum outcomes are realized in different universes?",
+          "correct_response": "Yes"
+        },
+        {
+          "text": "Is quantum entanglement a phenomenon that is consistent with the classical principle of locality?",
           "correct_response": "No"
         },
         {
-          "text": "Is glucose a form of chemical energy produced by this process?",
+          "text": "Does Pilot-Wave Theory (Bohmian Mechanics) agree with the Copenhagen interpretation that reality is inherently probabilistic?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does quantum decoherence propose that a conscious observer is necessary to make a quantum system behave classically?",
+          "correct_response": "No"
+        }
+      ]
+    },
+    {
+      "generated_text": "The Suez Canal, an artificial sea-level waterway in Egypt connecting the Mediterranean and Red Seas, has been a linchpin of global trade since its 1869 inauguration. Its construction, overseen by French diplomat Ferdinand de Lesseps, came at an immense human cost, with tens of thousands of Egyptian laborers dying from disease and harsh conditions. By offering a direct route between the North Atlantic and northern Indian Oceans, it drastically reduced the journey between Europe and Asia, negating the need to circumnavigate Africa. Initially owned by French and Egyptian interests, with Egypt's shares later sold to the British, the canal served European colonial ambitions. Its strategic importance culminated in the 1956 Suez Crisis, when Egyptian President Gamal Abdel Nasser nationalized the canal, marking a significant shift in post-colonial power dynamics despite a military response from Britain, France, and Israel. Economically, the canal is a vital source of revenue for Egypt and a critical artery for commerce, with about 12% of global trade passing through it. The 2021 blockage by the container ship *Ever Given*, which halted traffic for six days, highlighted the fragility of global supply chains dependent on this single chokepoint. To accommodate growing traffic, the canal has been expanded several times, most notably with the 'New Suez Canal' project in 2015, which deepened the main channel and opened a new 35km parallel channel. Environmentally, the canal's removal of the natural barrier between seas has facilitated the migration of hundreds of Indo-Pacific species into the Mediterranean, a process known as Lessepsian migration, which has had considerable and often disruptive ecological consequences.",
+      "questions": [
+        {
+          "text": "Was the Suez Canal primarily financed and controlled by Egypt upon its initial completion?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the nationalization of the Suez Canal in 1956 lead to a prolonged period of European control over the waterway?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Has the Suez Canal's construction had a measurable impact on the marine ecosystems of the Mediterranean Sea?",
+          "correct_response": "Yes"
+        },
+        {
+          "text": "Was the construction of the canal completed with no significant loss of life among the workforce?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the 2021 blockage by the *Ever Given* demonstrate the canal's declining importance in modern global trade?",
+          "correct_response": "No"
+        }
+      ]
+    },
+    {
+      "generated_text": "The Stock Market Crash of 1929 was not a singular event but the culmination of a decade of speculative excess and underlying economic fragilities. The 'Roaring Twenties' were characterized by rapid industrial expansion and a pervasive belief in perpetual prosperity, which fueled a speculative bubble. Many investors, including ordinary citizens, engaged in 'buying on margin,' borrowing up to 90% of a stock's price, which amplified both gains and potential losses. This was further fueled by newly popular investment trusts, which were often highly leveraged and opaque. Underlying this frenzy were several weaknesses: overproduction in industries, a depressed agricultural sector, and a severe concentration of wealth that limited mass purchasing power. The crash began in late October 1929, with 'Black Tuesday' (October 29) witnessing a catastrophic sell-off. While the crash shattered confidence and triggered the Great Depression, the subsequent collapse of the banking system plunged the nation into economic disaster. The crisis also had a swift international dimension; as American banks recalled loans from Europe, they helped trigger the collapse of European economies. The situation was exacerbated by protectionist policies like the 1930 Smoot-Hawley Tariff Act, which raised U.S. tariffs on over 20,000 imported goods, leading to retaliatory tariffs from other countries and a collapse in world trade. In response to the systemic failures, the U.S. government eventually enacted sweeping financial reforms, including the Glass-Steagall Act, which separated commercial and investment banking, and created the Securities and Exchange Commission (SEC) to regulate the stock market.",
+      "questions": [
+        {
+          "text": "Was the 1929 stock market crash an isolated event caused by a single factor?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the practice of buying stocks on margin reduce the financial risk for investors in the 1920s?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the Federal Reserve lower interest rates immediately before the crash to encourage more investment?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Was the Smoot-Hawley Tariff Act of 1930 designed to promote international free trade?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the creation of the SEC and the Glass-Steagall Act represent a decrease in government regulation of the financial sector?",
+          "correct_response": "No"
+        }
+      ]
+    },
+    {
+      "generated_text": "The standard model of cosmology posits that the universe is composed of approximately 5% ordinary matter, 27% dark matter, and 68% dark energy. Dark matter does not emit or reflect any electromagnetic radiation, making it invisible. Its existence is inferred from its gravitational effects, most notably from galaxy rotation curves, where the observed speed of stars in the outer regions of galaxies is much faster than can be accounted for by the visible matter alone. This work, pioneered by astronomers like Vera Rubin, suggests a massive, invisible halo of dark matter provides the necessary additional gravity. Gravitational lensing, the bending of light from distant objects around massive cosmic structures, provides further strong evidence. The leading candidates for dark matter particles are WIMPs (Weakly Interacting Massive Particles). Dark energy, on the other hand, is a hypothesized form of energy that permeates all of space and is responsible for the observed accelerating expansion of the universe, a discovery made using observations of Type Ia supernovae. This acceleration is counterintuitive, as gravity was expected to slow the expansion. The effects of these two components are opposing: dark matter's gravity pulls matter together, facilitating cosmic structure formation, while dark energy's repulsive force drives everything apart. The nature of both remains a profound mystery. The leading theory for dark energy is the cosmological constant, an intrinsic energy of empty space, but this model suffers from a massive discrepancy between theoretical prediction and observation, known as the 'cosmological constant problem.'",
+      "questions": [
+        {
+          "text": "Does ordinary matter constitute the majority of the universe's composition?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does dark matter contribute to the accelerating expansion of the universe?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the existence of dark matter directly observed through powerful telescopes?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does the phenomenon of gravitational lensing provide evidence for the existence of dark matter?",
+          "correct_response": "Yes"
+        },
+        {
+          "text": "Are WIMPs the leading theoretical candidate for the particles that constitute dark energy?",
+          "correct_response": "No"
+        }
+      ]
+    },
+    {
+      "generated_text": "The Peace of Westphalia in 1648, comprising the Treaty of Münster and the Treaty of Osnabrück, is widely regarded as a watershed moment in the development of the modern international system. It brought an end to the devastating Thirty Years' War, which had ravaged Central Europe, and the Eighty Years' War between Spain and the Dutch Republic. The treaties established the principle of Westphalian sovereignty, which holds that each state has exclusive sovereignty over its territory, free from external interference in its domestic affairs. This marked a fundamental shift away from the medieval hierarchical order, where authority was contested between secular rulers, the Pope, and the Holy Roman Emperor. The treaties formally recognized the legal equality of states and the independence of the Dutch Republic and the Swiss Confederacy. A key provision was the extension of religious toleration, formally recognizing Calvinism alongside Catholicism and Lutheranism within the Holy Roman Empire and affirming the principle of 'cuius regio, eius religio' (whose realm, his religion) while allowing Christians to practice their faith privately if it was not the state religion. This helped to mitigate the religious conflicts that had fueled the preceding wars. The new European order was based on a balance ofpower, a system designed to prevent any single state from achieving hegemony. Despite modern challenges to state sovereignty from globalization and international law, the core Westphalian tenets of statehood and non-intervention remain foundational concepts in international relations.",
+      "questions": [
+        {
+          "text": "Did the Peace of Westphalia reinforce the supreme authority of the Pope over all European states?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the treaties of Westphalia exclusively recognize Catholicism as the sole legitimate religion?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does the principle of Westphalian sovereignty prohibit any form of external influence on a state's domestic affairs?",
+          "correct_response": "Yes"
+        },
+        {
+          "text": "Did the Peace of Westphalia consist of a single treaty signed by all parties at once?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the treaties formally recognize the independence of the Dutch Republic?",
           "correct_response": "Yes"
         }
       ]
     },
     {
-      "generated_text": "The Great Wall of China is a series of fortifications made of stone, brick, and other materials, built along the historical northern borders of ancient Chinese states to protect against invasions. The majority of the existing wall is from the Ming Dynasty (1368–1644). Contrary to popular belief, it is not a single continuous wall but a system of walls, watchtowers, and fortresses.",
+      "generated_text": "Martin Heidegger's 'Being and Time' presents a radical re-evaluation of ontology through the analysis of 'Dasein,' his term for human existence. Heidegger argues that Western philosophy has forgotten the question of Being itself, instead focusing on particular beings. Dasein is unique because it is the only being for whom its own Being is a question. He breaks from the Cartesian tradition of a detached, thinking subject by defining Dasein as 'Being-in-the-world,' an inseparable unity of person and environment. This 'being-in' is not spatial but an existential one of engagement and concern ('Sorge'). We primarily encounter entities as 'ready-to-hand' (zuhanden), as equipment we use within a context of purpose, like a hammer for hammering. Only when it breaks or is out of place do we see it as a mere object with properties, or 'present-at-hand' (vorhanden). A central aspect of Dasein is its temporality. Time is not a linear sequence of 'nows' but a dynamic structure that constitutes Dasein's being. Dasein is 'thrown' into a world with a past it did not choose, projects itself toward future possibilities, and engages with the present. Authenticity involves confronting one's own mortality and finite possibilities, thereby taking ownership of one's existence. This is often revealed in the mood of 'Anxiety' (Angst), which is a dread of no-thing in particular, and which discloses Dasein's freedom. Inauthenticity, in contrast, is characterized by absorption into the 'they' (das Man) of everyday social conformity. Thus, Dasein 'is' its time, and a true understanding of Being is accessed through this temporal lens.",
       "questions": [
         {
-          "text": "Was the Great Wall built primarily for decorative purposes?",
+          "text": "Does Heidegger view the human being as a subject separate from the objective world?",
           "correct_response": "No"
         },
         {
-          "text": "Is the Great Wall a single, unbroken structure?",
+          "text": "According to Heidegger, is time a linear progression of discrete moments?",
           "correct_response": "No"
         },
         {
-          "text": "Was most of the wall we see today built during the Ming Dynasty?",
-          "correct_response": "Yes"
-        }
-      ]
-    },
-    {
-      "generated_text": "Honeybees are social flying insects known for their construction of perennial colonial nests from wax, the large size of their colonies, and their surplus production and storage of honey. A colony generally consists of a single queen, thousands of female worker bees, and, in certain seasons, a number of male drones. The worker bees are responsible for foraging for nectar and pollen.",
-      "questions": [
-        {
-          "text": "Are honeybee colonies run by multiple queens?",
+          "text": "Does Heidegger believe that conforming to societal norms is the path to an authentic existence?",
           "correct_response": "No"
         },
         {
-          "text": "Are the male drones responsible for collecting nectar?",
+          "text": "In Heidegger's philosophy, do we typically encounter a hammer as an object with specific physical properties ('present-at-hand')?",
           "correct_response": "No"
         },
         {
-          "text": "Do honeybees build their nests from wax?",
-          "correct_response": "Yes"
-        }
-      ]
-    },
-    {
-      "generated_text": "The Amazon rainforest is the largest tropical rainforest in the world, covering an area of over 5.5 million square kilometers. It is home to an incredible diversity of species, including an estimated 10% of the world's known species. The Amazon River, the second-longest river in the world, flows through the rainforest. The region plays a critical role in regulating the global climate.",
-      "questions": [
-        {
-          "text": "Is the Amazon the largest desert in the world?",
-          "correct_response": "No"
-        },
-        {
-          "text": "Does the Amazon River hold the title for the longest river in the world?",
-          "correct_response": "No"
-        },
-        {
-          "text": "Does the Amazon rainforest contain more than half of the world's known species?",
+          "text": "Does Heidegger equate the feeling of anxiety (Angst) with being afraid of a specific object or threat?",
           "correct_response": "No"
         }
       ]
     },
     {
-      "generated_text": "The Python programming language was created by Guido van Rossum and first released in 1991. Its design philosophy emphasizes code readability with its notable use of significant indentation. Python is dynamically-typed and garbage-collected. It supports multiple programming paradigms, including structured, object-oriented, and functional programming. It is not named after the snake.",
+      "generated_text": "The debate between Keynesian economics and Monetarism represents a fundamental disagreement over the drivers of economic activity and the role of government. Keynesianism, developed by John Maynard Keynes, posits that aggregate demand is unstable and that a market economy can suffer from persistent high unemployment. Keynesians argue for active fiscal policy—government spending and taxation—to manage the economy. For instance, increasing government spending during a recession is believed to stimulate demand through a 'multiplier effect,' where each dollar spent by the government leads to a greater than one-dollar increase in national income. Monetarism, championed by Milton Friedman, challenges this. Monetarists contend that the money supply is the primary determinant of nominal GDP and that 'inflation is always and everywhere a monetary phenomenon.' They advocate for a passive fiscal policy and a focus on controlling the money supply to ensure price stability, ideally by having the central bank follow a steady, predictable rule for money growth. A key point of disagreement is the velocity of money (the rate at which money changes hands); Keynesians see it as unstable, making monetary policy less reliable, while Monetarists see it as stable and predictable. Monetarists also warn of 'crowding out,' where government borrowing to finance spending drives up interest rates and reduces private investment, negating the fiscal stimulus. The period of 'stagflation' in the 1970s (simultaneously high inflation and high unemployment) was difficult to explain with traditional Keynesian models and bolstered the influence of Monetarism, as it seemed to break the inflation-unemployment trade-off suggested by the Phillips Curve.",
       "questions": [
         {
-          "text": "Was Python first released before 1990?",
+          "text": "Do Keynesian economists believe that free markets will always self-correct to full employment?",
           "correct_response": "No"
         },
         {
-          "text": "Does Python use curly braces to define code blocks, similar to C++ or Java?",
+          "text": "Do Monetarists advocate for active and frequent government spending to manage the economy?",
           "correct_response": "No"
         },
         {
-          "text": "Does Python's design philosophy prioritize code readability?",
-          "correct_response": "Yes"
-        }
-      ]
-    },
-    {
-      "generated_text": "The human brain is a complex organ that controls thought, memory, emotion, touch, motor skills, vision, and every process that regulates our body. Protected within the skull, the brain is composed of the cerebrum, cerebellum, and brainstem. The cerebrum is the largest part and is divided into two hemispheres. It performs higher functions like interpreting touch and vision.",
-      "questions": [
-        {
-          "text": "Is the cerebellum the largest part of the human brain?",
+          "text": "Do Keynesians and Monetarists agree on the stability and predictability of the velocity of money?",
           "correct_response": "No"
         },
         {
-          "text": "Is the brain composed of four main parts?",
+          "text": "Does the Keynesian multiplier effect suggest that an increase in government spending leads to a smaller increase in national income?",
           "correct_response": "No"
         },
         {
-          "text": "Is the brain protected by the skull?",
-          "correct_response": "Yes"
-        }
-      ]
-    },
-    {
-      "generated_text": "Mount Everest, located in the Himalayas, is Earth's highest mountain above sea level, with its peak at 8,848.86 meters (29,031.7 ft). The first confirmed ascent was made by Tenzing Norgay and Edmund Hillary in 1953. The mountain presents many dangers, such as extreme cold, unpredictable weather, and altitude sickness. It is not the tallest mountain from base-to-peak; that title belongs to Mauna Kea.",
-      "questions": [
-        {
-          "text": "Is Mount Everest located in the Andes mountain range?",
-          "correct_response": "No"
-        },
-        {
-          "text": "Was the first successful ascent of Everest in the 1960s?",
-          "correct_response": "No"
-        },
-        {
-          "text": "Is Mount Everest the tallest mountain on Earth when measured from its base on the ocean floor?",
+          "text": "Did the economic phenomenon of 'stagflation' in the 1970s provide strong support for traditional Keynesian theories?",
           "correct_response": "No"
         }
       ]
     },
     {
-      "generated_text": "The printing press, invented by Johannes Gutenberg around 1440, was a revolutionary invention that enabled the mass production of books and the rapid dissemination of knowledge throughout Europe. Before its invention, books were painstakingly copied by hand, making them rare and expensive. Gutenberg's press used movable type, which allowed for much faster and more efficient printing.",
+      "generated_text": "Protein synthesis is the fundamental process by which cells build proteins. It is divided into two main stages: transcription and translation. Transcription occurs in the nucleus of eukaryotic cells, where the enzyme RNA polymerase creates a messenger RNA (mRNA) molecule by reading a DNA template. This initial pre-mRNA transcript then undergoes processing: non-coding regions called introns are removed in a process called splicing, a protective 5' cap is added to one end, and a poly-A tail is added to the other. This mature mRNA is then exported to the cytoplasm. The second stage, translation, takes place on ribosomes. The genetic information on the mRNA is read as a series of three-nucleotide 'codons.' This genetic code is degenerate, meaning multiple codons can specify the same amino acid. The ribosome, a complex machine made of ribosomal RNA (rRNA) and proteins, facilitates the decoding. It has A, P, and E sites that manage the binding of transfer RNA (tRNA) molecules, which carry specific amino acids corresponding to the mRNA codons. The ribosome catalyzes the formation of peptide bonds, creating a polypeptide chain. A single error in the DNA sequence, a mutation, can lead to an incorrect amino acid being inserted, potentially causing a protein to misfold and lose its function, as seen in diseases like sickle cell anemia. Following translation, the polypeptide chain must fold into a specific three-dimensional structure, often assisted by chaperone proteins, and may undergo post-translational modifications to become fully functional.",
       "questions": [
         {
-          "text": "Was the printing press invented in the 16th century?",
+          "text": "Does translation occur before transcription in the process of protein synthesis?",
           "correct_response": "No"
         },
         {
-          "text": "Did the printing press make books more expensive for the average person?",
+          "text": "In eukaryotic cells, is the initial mRNA transcript immediately ready for translation after it is made from the DNA template?",
           "correct_response": "No"
         },
         {
-          "text": "Did Gutenberg's invention use a technology called movable type?",
-          "correct_response": "Yes"
+          "text": "Is the simple formation of a polypeptide chain the final step in creating all functional proteins?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Is the genetic code structured such that each amino acid corresponds to only one unique codon?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Does the ribosome's function depend solely on proteins, with no role for RNA?",
+          "correct_response": "No"
         }
       ]
     },
     {
-      "generated_text": "The Pacific Ocean is the largest and deepest of the world's five oceans. It extends from the Arctic Ocean in the north to the Southern Ocean in the south and is bounded by the continents of Asia and Australia in the west and the Americas in the east. The Mariana Trench, the deepest known point on Earth, is located in the western Pacific. The ocean's name was coined by explorer Ferdinand Magellan.",
+      "generated_text": "The Silk Road was not a single road but an extensive network of trade routes connecting East and West for over 1,500 years. Its significance extends far beyond the commerce of goods like silk, spices, paper, and gunpowder. It was a primary conduit for the transmission of ideas, technologies, religions, and cultures. Buddhism spread from India to China, and Islam was carried into Central Asia, facilitated by the constant movement of merchants, missionaries, and armies. This exchange led to the growth of cosmopolitan cities like Samarkand and Chang'an. The network included both overland routes through the treacherous terrains of Central Asia and a parallel system of maritime routes connecting ports in Southeast Asia, India, the Arabian Peninsula, and East Africa. The success of these routes fluctuated with the rise and fall of empires; the Han, Tang, and especially the Mongol Empire provided periods of relative stability and security (the 'Pax Mongolica') that allowed trade to flourish. Intermediary peoples, such as the Sogdians, were crucial middlemen who dominated long stretches of the trade. The network also had a dark side, as it facilitated the rapid spread of diseases, most notably the bubonic plague (the Black Death), which devastated Eurasia in the 14th century. The decline of the overland routes began in the mid-15th century, largely due to the collapse of the Mongol Empire and the rise of the Ottoman Empire, which was more hostile to trade with the West. This decline, coupled with advances in European maritime technology, spurred the Age of Discovery as nations like Portugal sought direct sea routes to the riches of Asia.",
       "questions": [
         {
-          "text": "Is the Atlantic Ocean larger than the Pacific Ocean?",
+          "text": "Was the Silk Road a single, continuous road from China to Europe?",
           "correct_response": "No"
         },
         {
-          "text": "Is the Mariana Trench located in the Atlantic Ocean?",
+          "text": "Was the exchange along the Silk Road limited to only material goods?",
           "correct_response": "No"
         },
         {
-          "text": "Does the Pacific Ocean border the continent of Africa?",
+          "text": "Was the term 'Silk Road' used by the ancient merchants who traveled these routes?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the Silk Road operate exclusively as an overland network?",
+          "correct_response": "No"
+        },
+        {
+          "text": "Did the rise of the Mongol Empire hinder trade along the Silk Road by increasing instability?",
           "correct_response": "No"
         }
       ]
