@@ -385,7 +385,7 @@ def render_page_1():
     """)
 
     with st.expander(
-        "Provice a custom prompt (OPTIONAL, but preffered if you want highly specific music)"
+        "Provice a custom prompt (OPTIONAL, but recommended if you want highly specific music)"
     ):
         st.markdown("#### 🎯 Custom Music Prompt (Optional)")
         alternative_prompt = st.text_area(
@@ -400,7 +400,7 @@ def render_page_1():
 
         # finetune prompt with AI - call gemini api
         def finetune_text(prompt):
-            finetune_prompt = """
+            finetune_prompt = f"""
                     When prompting Lyria 2 it's helpful to consider the overall style of music you want to generate. Consider options such as: classical, electronic, rock, jazz, hip hop, or pop. You can even describe more general styles that include cinematic, ambient, or lo-fi.
                     With Lyria 2, you can generate a 30 second WAV audio at a 48kHz sample rate from a text prompt. In order to generate an audio clip in the following sample, specify the following info:
                     Prompt: A detailed description of the music you would like to generate.
