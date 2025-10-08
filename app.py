@@ -143,7 +143,6 @@ def load_music(music_params: dict, max_retries=3):
         st.info(music_prompt)
         instance = {
             "prompt": music_prompt,
-            "negative_prompt": "",
             "sample_count": 1,
         }
 
