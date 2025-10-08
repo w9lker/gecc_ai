@@ -324,7 +324,7 @@ def render_page_1():
                 model="gemini-2.5-flash",
                 contents=finetune_prompt,
             )
-        except Exception:
+        except Exception as e:
             st.error(f"Error refining prompt: {e}")
             return prompt  # Return original if error
         return response.text if response else prompt
