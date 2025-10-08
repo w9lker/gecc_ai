@@ -315,6 +315,7 @@ def render_page_1():
         finetune_prompt = f"""
                 When prompting Lyria 2 it's helpful to consider the overall style of music you want to generate. Consider options such as: classical, electronic, rock, jazz, hip hop, or pop. You can even describe more general styles that include cinematic, ambient, or lo-fi.
                 With this in mind, please give me back a detailed pure finetuned prompt, given the original prompt: {prompt}.
+                Be aware that the prompt should include only the standard english words, since the tokenize doesn't support foreign words.
             """
         try:
             client = genai.Client(api_key=st.secrets["gemini"]["api_key"])
