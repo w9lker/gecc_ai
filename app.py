@@ -348,8 +348,6 @@ def render_page_1():
         if submitted:
             # Check if using alternative prompt or regular parameters
             if alternative_prompt.strip():
-                st.info(refined)
-                st.sleep(3)
                 # Using alternative prompt - store it and minimal other info
                 st.session_state.user_info = {
                     "music_while_studying": music_while_studying,
@@ -357,7 +355,7 @@ def render_page_1():
                 }
 
                 st.session_state.music_params = {
-                    "alternative_prompt": refined.strip(),
+                    "alternative_prompt": alternative_prompt.strip(),
                     "negative_prompt": negative_prompt.strip(),
                     "seed": None,
                     # Store other params for record-keeping even though they won't be used
