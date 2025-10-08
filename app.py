@@ -97,31 +97,40 @@ def load_passage():
 
 
 def load_music(music_params: dict, max_retries=3):
-    """
-    Generate music using Lyria API based on user preferences.
-    Args:
-        music_params (dict): Dictionary containing all music parameters
-    Returns:
-        bytes: The audio data in bytes, or None if generation fails.
-    """
     try:
         # Get access token
         token = get_access_token_for_lyria()
         if not token:
-            st.error("Failed to authenticate with Lyria API")
             return create_silent_audio()
 
         # Create detailed prompt
         music_prompt, negative_prompt = create_music_prompt(music_params)
-        time.sleep(0.1)
 
         with st.expander("🎵 Music Generation Details", expanded=False):
             st.write(f"**Main Prompt:** {music_prompt}")
             st.write(f"**Negative Prompt:** {negative_prompt}")
-            if music_params.get("alternative_prompt"):
-                st.info(
-                    "Using custom alternative prompt - all other parameters ignored"
-                )
+
+            # Add Try Again button
+            if "last_error" in st.session_state:
+                if st.button("🔄 Try Again with Refined Prompt"):
+                    # Refine prompt based on last error
+                    refinement_prompt = f"""
+                    The following prompt resulted in an error from Lyria AI music generation:
+                    "{music_prompt}"
+                    
+                    Error message: {st.session_state.last_error}
+                    
+                    Please refine the prompt to avoid this error while maintaining the musical intent.
+                    Return only the refined prompt text.
+                    """
+                    try:
+                        model = genai.GenerativeModel("gemini-pro")
+                        response = model.generate_content(refinement_prompt)
+                        refined_prompt = response.text.strip()
+                        music_prompt = refined_prompt
+                        st.write("**Refined Prompt:** ", refined_prompt)
+                    except Exception as e:
+                        st.error(f"Could not refine prompt: {e}")
 
         # Set up API endpoint
         project_id = st.secrets["lyria"]["project_id"]
@@ -221,7 +230,8 @@ def load_music(music_params: dict, max_retries=3):
             return create_silent_audio()
 
     except Exception as e:
-        st.error(f"Unexpected error in music generation: {str(e)[:200]}")
+        st.session_state.last_error = str(e)  # Store error for refinement
+        st.error(f"Error generating music: {e}")
         return create_silent_audio()
 
 
