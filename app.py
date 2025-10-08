@@ -315,6 +315,7 @@ def render_page_1():
     if st.button("🔄 Refine Prompt with AI"):
         with st.spinner("Refining your prompt..."):
             refined = finetune_text(alternative_prompt.strip())
+            st.session_state["refined"] = refined
         st.info(f"Refined Prompt: {refined}")
 
     # Basic user info form
@@ -355,7 +356,9 @@ def render_page_1():
                 }
 
                 st.session_state.music_params = {
-                    "alternative_prompt": alternative_prompt.strip(),
+                    "alternative_prompt": alternative_prompt.strip()
+                    if "refined" not in st.session_state
+                    else refined,
                     "negative_prompt": negative_prompt.strip(),
                     "seed": None,
                     # Store other params for record-keeping even though they won't be used
