@@ -171,28 +171,6 @@ def load_music(music_params: dict, max_retries=3):
                     )
                     response.raise_for_status()
                     break
-                except requests.exceptions.Timeout:
-                    if attempt < max_retries:
-                        st.warning(
-                            f"Request timeout, retrying... (attempt {attempt}/{max_retries})"
-                        )
-                        time.sleep(3)
-                        continue
-                    else:
-                        st.error("Music generation timed out. Using silence instead.")
-                        return create_silent_audio()
-                except requests.exceptions.HTTPError as e:
-                    error_msg = f"HTTP Error: {e.response.status_code}"
-                    if e.response.status_code == 429:  # Rate limit
-                        st.error("API rate limit reached. Using silence instead.")
-                    elif e.response.status_code == 403:  # Permission denied
-                        st.error(
-                            "API access denied. Check your credentials and permissions."
-                        )
-                    else:
-                        st.error(f"API Error: {error_msg}")
-                        st.error(f"Response: {e.response.text[:200]}")
-                    return create_silent_audio()
                 except Exception as e:
                     if attempt < max_retries:
                         st.warning(
