@@ -358,7 +358,7 @@ def render_page_1():
                 st.session_state.music_params = {
                     "alternative_prompt": alternative_prompt.strip()
                     if "refined" not in st.session_state
-                    else refined,
+                    else st.session_state["refined"],
                     "negative_prompt": negative_prompt.strip(),
                     "seed": None,
                     # Store other params for record-keeping even though they won't be used
