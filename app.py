@@ -140,19 +140,16 @@ def load_music(music_params: dict, max_retries=3):
         )
 
         # Prepare request - following official Lyria API format
-        instance = {"prompt": music_prompt}
+        st.info(music_prompt)
+        instance = {
+            "prompt": music_prompt,
+            "negative_prompt": "",
+            "sample_count": 1,
+        }
 
         # Add negative prompt if provided
         if negative_prompt.strip():
             instance["negative_prompt"] = negative_prompt
-
-        # Add seed if provided (for reproducibility)
-        seed = music_params.get("seed")
-        if seed is not None and seed > 0:
-            instance["seed"] = int(seed)
-        else:
-            # Use sample_count instead of seed for variety
-            instance["sample_count"] = 1
 
         payload = {"instances": [instance], "parameters": {}}
         headers = {
@@ -331,94 +328,6 @@ def render_page_1():
             horizontal=True,
         )
 
-        # Alternative prompt option at the to
-        # Hide the music params section by default (make it invisible)
-        # To make it truly invisible, do not render it at all:
-        # (If you want to show it conditionally, wrap in an if False or similar)
-        # Example: if False: ... (will not render)
-        # If you want to show it only for debugging, use a flag.
-        # Here, we simply omit rendering so nothing is shown.
-        # (If you want to keep the code for future, comment it out.)
-
-        # with st.expander("Music params"):
-        #     st.markdown("---")
-        #     st.markdown("#### 🎛️ Or Choose Your Preferences")
-        #
-        #     # Genre selection
-        #     genre = st.selectbox(
-        #         "What is your favorite music genre?",
-        #         [
-        #             "Classical",
-        #             "Lo-fi",
-        #             "Jazz",
-        #             "Ambient",
-        #             "Electronic",
-        #             "Acoustic",
-        #             "Piano",
-        #             "Rock",
-        #             "Pop",
-        #             "Hip Hop",
-        #             "Other",
-        #         ],
-        #         help="Select the genre that best matches your preference",
-        #     )
-        #
-        #     other_genre = ""
-        #     if genre == "Other":
-        #         other_genre = st.text_input("Please specify your preferred genre:")
-        #
-        #     # Volume with proper slider points
-        #     volume = st.select_slider(
-        #         "Preferred music volume level:",
-        #         options=["Very Quiet", "Quiet", "Moderate", "Loud", "Very Loud"],
-        #         value="Moderate",
-        #         help="Choose how loud you prefer your study music",
-        #     )
-        #
-        #     # Tempo
-        #     tempo = st.select_slider(
-        #         "Preferred tempo (speed):",
-        #         options=["Very Slow", "Slow", "Moderate", "Fast", "Very Fast"],
-        #         value="Moderate",
-        #         help="Choose the speed/rhythm you prefer",
-        #     )
-        #
-        #     # Mood
-        #     mood = st.selectbox(
-        #         "What mood do you prefer for study music?",
-        #         [
-        #             "Calm",
-        #             "Peaceful",
-        #             "Energetic",
-        #             "Focused",
-        #             "Relaxed",
-        #             "Uplifting",
-        #             "Meditative",
-        #         ],
-        #         help="Select the emotional tone you find most helpful for studying",
-        #     )
-        #
-        #     # Instruments (multi-select)
-        #     instruments = st.multiselect(
-        #         "Preferred instruments (optional):",
-        #         [
-        #             "Piano",
-        #             "Guitar",
-        #             "Strings",
-        #             "Synthesizer",
-        #             "Flute",
-        #             "Saxophone",
-        #             "Drums",
-        #             "Violin",
-        #             "Cello",
-        #             "Harp",
-        #         ],
-        #         help="Select specific instruments you'd like to hear (leave empty for any)",
-        #     )
-        #
-        #     st.subheader("⚙️ Advanced Options")
-
-        # Provide default values for variables so the rest of the code works
         genre = ""
         other_genre = ""
         volume = "Moderate"
