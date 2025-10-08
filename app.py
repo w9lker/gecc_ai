@@ -316,7 +316,6 @@ def render_page_1():
         with st.spinner("Refining your prompt..."):
             refined = finetune_text(alternative_prompt.strip())
         st.info(f"Refined Prompt: {refined}")
-        alternative_prompt = refined
 
     # Basic user info form
     with st.form("user_info_form"):
@@ -349,7 +348,7 @@ def render_page_1():
         if submitted:
             # Check if using alternative prompt or regular parameters
             if alternative_prompt.strip():
-                st.info(alternative_prompt)
+                st.info(refined)
                 st.sleep(3)
                 # Using alternative prompt - store it and minimal other info
                 st.session_state.user_info = {
@@ -358,7 +357,7 @@ def render_page_1():
                 }
 
                 st.session_state.music_params = {
-                    "alternative_prompt": alternative_prompt.strip(),
+                    "alternative_prompt": refined.strip(),
                     "negative_prompt": negative_prompt.strip(),
                     "seed": None,
                     # Store other params for record-keeping even though they won't be used
