@@ -349,6 +349,7 @@ def render_page_1():
         if submitted:
             # Check if using alternative prompt or regular parameters
             if alternative_prompt.strip():
+                st.info(alternative_prompt)
                 # Using alternative prompt - store it and minimal other info
                 st.session_state.user_info = {
                     "music_while_studying": music_while_studying,
