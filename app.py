@@ -22,33 +22,18 @@ TEXT_GENERATION_PROMPT = """
     - "questions": a list of objects, each with "text" (the question) and "correct_response" ("Yes" or "No").
 """
 
-with open("collection.json", "r", encoding="utf-8") as f:
-    available_passages = json.load(f)["passages"]
-print(available_passages)
-random.shuffle(available_passages)
-
 
 def get_access_token_for_lyria() -> str:
-    """Get OAuth token for Lyria API using service account credentials."""
-    try:
-        # Use the same firestore credentials for Lyria API access
-        creds = service_account.Credentials.from_service_account_info(
-            st.secrets["lyria"],
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
-        )
-        req = google.auth.transport.requests.Request()
-        creds.refresh(req)
-        return creds.token
-    except Exception as e:
-        st.error(f"Failed to get access token: {e}")
-        return None
+    creds = service_account.Credentials.from_service_account_info(
+        st.secrets["lyria"],
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    )
+    req = google.auth.transport.requests.Request()
+    creds.refresh(req)
+    return creds.token
 
 
 def decode_prediction_to_wav_bytes(pred_bytes_b64: str) -> bytes:
-    """
-    Lyria predict returns raw 48kHz 16-bit PCM stereo as base64-encoded bytes.
-    We wrap that raw PCM into a WAV container so media players can open it.
-    """
     try:
         raw = base64.b64decode(pred_bytes_b64)
         pcm = np.frombuffer(raw, dtype=np.int16)
@@ -75,24 +60,12 @@ def decode_prediction_to_wav_bytes(pred_bytes_b64: str) -> bytes:
 
 
 def create_music_prompt(music_params: dict) -> tuple:
-    """
-    Create a detailed music prompt based on user preferences.
-    Returns: (prompt, negative_prompt)
-    """
-    try:
-        # Check if alternative prompt is provided
-        alternative_prompt = music_params.get("alternative_prompt", "").strip()
-        # Use the alternative prompt directly, ignoring all other parameters
-        return alternative_prompt, music_params.get("negative_prompt", "")
-
-    except Exception as e:
-        st.error(f"Error creating music prompt: {e}")
-        return "ambient calm music for studying", ""
+    prompt = music_params.get("prompt", "").strip()
+    return prompt, music_params.get("negative_prompt", "")
 
 
 def load_passage():
-    # load the passage from the passages in the rotation
-    passage = available_passages.pop()  # guaranteed not to end
+    passage = st.session_state.available_passages.pop()  # guaranteed not to end
     return passage["generated_text"], passage["questions"]
 
 
@@ -109,28 +82,6 @@ def load_music(music_params: dict, max_retries=3):
         with st.expander("🎵 Music Generation Details", expanded=False):
             st.write(f"**Main Prompt:** {music_prompt}")
             st.write(f"**Negative Prompt:** {negative_prompt}")
-
-            # Add Try Again button
-            if "last_error" in st.session_state:
-                if st.button("🔄 Try Again with Refined Prompt"):
-                    # Refine prompt based on last error
-                    refinement_prompt = f"""
-                    The following prompt resulted in an error from Lyria AI music generation:
-                    "{music_prompt}"
-                    
-                    Error message: {st.session_state.last_error}
-                    
-                    Please refine the prompt to avoid this error while maintaining the musical intent.
-                    Return only the refined prompt text.
-                    """
-                    try:
-                        model = genai.GenerativeModel("gemini-pro")
-                        response = model.generate_content(refinement_prompt)
-                        refined_prompt = response.text.strip()
-                        music_prompt = refined_prompt
-                        st.write("**Refined Prompt:** ", refined_prompt)
-                    except Exception as e:
-                        st.error(f"Could not refine prompt: {e}")
 
         # Set up API endpoint
         project_id = st.secrets["lyria"]["project_id"]
@@ -210,26 +161,15 @@ def load_music(music_params: dict, max_retries=3):
 
 
 def create_silent_audio(duration=30):
-    """
-    Create a silent audio track as fallback.
-    Args:
-        duration (int): Duration in seconds
-    Returns:
-        bytes: Silent WAV audio data
-    """
-    try:
-        samplerate = 44100  # 44.1kHz
-        # Generate a silent numpy array
-        silent_array = np.zeros(int(samplerate * duration))
+    samplerate = 44100  # 44.1kHz
+    # Generate a silent numpy array
+    silent_array = np.zeros(int(samplerate * duration))
 
-        # Use an in-memory bytes buffer
-        buffer = io.BytesIO()
-        write(buffer, samplerate, silent_array.astype(np.int16))
+    # Use an in-memory bytes buffer
+    buffer = io.BytesIO()
+    write(buffer, samplerate, silent_array.astype(np.int16))
 
-        return buffer.getvalue()
-    except Exception as e:
-        st.error(f"Error creating silent audio: {e}")
-        return b""
+    return buffer.getvalue()
 
 
 def submit_to_firestore(data: dict):
@@ -263,11 +203,27 @@ def restart_app():
     st.rerun()
 
 
-# --- STATE INITIALIZATION ---
+def finetune_text(prompt):
+    finetune_prompt = f"""
+            When prompting Lyria 2 it's helpful to consider the overall style of music you want to generate. Consider options such as: classical, electronic, rock, jazz, hip hop, or pop. You can even describe more general styles that include cinematic, ambient, or lo-fi.
+            With this in mind, please give me back a detailed pure finetuned prompt, given the original prompt: {prompt}.
+            Again just return the finetuned prompt (no extra punctuation or markdown), make the prompt around 50 words and describe the music through style, instruments, genre, tone, intensity.
+        """
+    try:
+        client = genai.Client(api_key=st.secrets["gemini"]["api_key"])
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=finetune_prompt,
+        )
+    except Exception as e:
+        st.error(f"Error refining prompt: {e}")
+        return prompt  # Return original if error
+    return response.text if response else prompt
 
-# Use session_state to store data across reruns and pages
-if "page_number" not in st.session_state:
-    st.session_state.page_number = 1
+
+# --- STATE INITIALIZATION ---
+if "page_index" not in st.session_state:
+    st.session_state.page_index = 1
 if "user_info" not in st.session_state:
     st.session_state.user_info = {}
 if "music_params" not in st.session_state:
@@ -276,45 +232,34 @@ if "test_answers" not in st.session_state:
     st.session_state.test_answers = {}
 if "generated_music_cache" not in st.session_state:
     st.session_state.generated_music_cache = {}
+if "page_order" not in st.session_state:
+    test_pages = [2, 3, 4]
+    random.shuffle(test_pages)
+    st.session_state.page_order = [1] + test_pages + [5]
+if "available_passages" not in st.session_state:
+    with open("collection.json", "r", encoding="utf-8") as f:
+        available_passages = json.load(f)["passages"]
+    print(available_passages)
+    random.shuffle(available_passages)
+    st.session_state.available_passages = available_passages
+
 
 # --- PAGE RENDERING FUNCTIONS ---
-
-
 def render_page_1():
     """Renders the initial user information gathering page."""
     st.header("Welcome! Let's get to know you.")
-
     email = st.text_input("What is your email")
 
     st.markdown("#### 🎯 Music Prompt")
-    alternative_prompt = st.text_area(
+    prompt = st.text_area(
         "Enter a complete custom prompt for music generation:",
         placeholder="Example: Create a dreamy soundscape with soft rain sounds, distant thunder, and ethereal synthesizers at 60 BPM, reminiscent of Brian Eno's ambient works",
-        help="If you provide a custom prompt, it will override all the selections below",
         height=80,
     )
 
-    # finetune prompt with AI - call gemini api
-    def finetune_text(prompt):
-        finetune_prompt = f"""
-                When prompting Lyria 2 it's helpful to consider the overall style of music you want to generate. Consider options such as: classical, electronic, rock, jazz, hip hop, or pop. You can even describe more general styles that include cinematic, ambient, or lo-fi.
-                With this in mind, please give me back a detailed pure finetuned prompt, given the original prompt: {prompt}.
-                Again just return the finetuned prompt (no extra punctuation or markdown), make the prompt around 50 words and describe the music through style, instruments, genre, tone, intensity.
-            """
-        try:
-            client = genai.Client(api_key=st.secrets["gemini"]["api_key"])
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=finetune_prompt,
-            )
-        except Exception as e:
-            st.error(f"Error refining prompt: {e}")
-            return prompt  # Return original if error
-        return response.text if response else prompt
-
     if st.button("🔄 Refine Prompt with AI"):
         with st.spinner("Refining your prompt..."):
-            refined = finetune_text(alternative_prompt.strip())
+            refined = finetune_text(prompt.strip())
             st.session_state["refined"] = refined
         st.info(f"Refined Prompt: {refined}")
 
@@ -326,13 +271,6 @@ def render_page_1():
             ("Yes", "No"),
             horizontal=True,
         )
-
-        genre = ""
-        other_genre = ""
-        volume = "Moderate"
-        tempo = "Moderate"
-        mood = "Calm"
-        instruments = []
 
         # Advanced options in expander
         with st.expander("🔧 Advanced Music Parameters (Optional)"):
@@ -348,32 +286,24 @@ def render_page_1():
 
         if submitted:
             # Check if using alternative prompt or regular parameters
-            if alternative_prompt.strip():
+            if prompt.strip():
                 # Using alternative prompt - store it and minimal other info
                 st.session_state.user_info = {
                     "music_while_studying": music_while_studying,
                     "email": email,
                 }
-
                 st.session_state.music_params = {
-                    "alternative_prompt": alternative_prompt.strip()
+                    "prompt": prompt.strip()
                     if "refined" not in st.session_state
                     else st.session_state["refined"],
                     "negative_prompt": negative_prompt.strip(),
-                    "seed": None,
-                    # Store other params for record-keeping even though they won't be used
-                    "genre": genre,
-                    "volume": volume,
-                    "tempo": tempo,
-                    "mood": mood.lower(),
-                    "instruments": instruments,
                 }
             else:
-                st.error("Please provide a custom prompt for music generation.")
+                st.error("Please enter a prompt")
                 return
 
             # Move to the next page
-            st.session_state.page_number = 2
+            st.session_state.page_index += 1
             st.rerun()
 
 
@@ -388,12 +318,12 @@ def render_test_page(page_num: int, with_music: bool):
             "description": "First, let's establish your baseline reading performance without any music.",
         },
         3: {
-            "title": "Reading Comprehension - With Background Music",
+            "title": "Reading Comprehension - AI Background Music",
             "icon": "🎵",
             "description": "Now let's see how background music affects your focus and comprehension.",
         },
         4: {
-            "title": "Reading Comprehension - Extended Music Session",
+            "title": "Reading Comprehension - External Music Session",
             "icon": "🎼",
             "description": "Final test with a different passage and the same music style to confirm results.",
         },
@@ -480,7 +410,8 @@ def render_test_page(page_num: int, with_music: bool):
             time.sleep(1.5)
 
             # Increment page number and rerun
-            st.session_state.page_number += 1
+            st.session_state.page_index += 1
+            st.info(st.session_state.page_index)
             st.rerun()
 
     with col2:
@@ -525,87 +456,6 @@ def render_final_page():
 
         results_summary[section_name] = result_data
 
-    # Display results in columns
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("#### 📚 Without Music")
-        for section in no_music_sections:
-            st.metric(
-                label="Baseline Score",
-                value=f"{section['score']}/{section['total']}",
-                delta=f"{section['percentage']:.1f}%",
-            )
-
-    with col2:
-        st.markdown("#### 🎵 With Music")
-        music_scores = []
-        for section in music_sections:
-            music_scores.append(section["percentage"])
-            st.metric(
-                label=f"Music Session {len(music_scores)}",
-                value=f"{section['score']}/{section['total']}",
-                delta=f"{section['percentage']:.1f}%",
-            )
-
-    # Performance comparison
-    if no_music_sections and music_sections:
-        baseline_avg = sum([s["percentage"] for s in no_music_sections]) / len(
-            no_music_sections
-        )
-        music_avg = sum([s["percentage"] for s in music_sections]) / len(music_sections)
-        difference = music_avg - baseline_avg
-
-        st.markdown("#### 📈 Performance Analysis")
-        if difference > 5:
-            st.success(
-                f"🎵 Music improved your performance by {difference:.1f} percentage points!"
-            )
-        elif difference < -5:
-            st.info(
-                f"📚 You performed {abs(difference):.1f} percentage points better without music."
-            )
-        else:
-            st.info(
-                "📊 Music had minimal impact on your performance (within 5% difference)."
-            )
-
-    # Show music preferences used
-    st.subheader("🎵 Your Music Configuration")
-    music_params = st.session_state.music_params
-
-    # Check if alternative prompt was used
-    if music_params.get("alternative_prompt"):
-        st.info("🎯 Custom prompt was used for music generation")
-        st.write(f"**Custom Prompt:** {music_params.get('alternative_prompt', 'N/A')}")
-        st.write(f"**Negative Prompt:** {music_params.get('negative_prompt', 'N/A')}")
-    else:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(f"**Genre:** {music_params.get('genre', 'N/A')}")
-            st.write(f"**Tempo:** {music_params.get('tempo', 'N/A')}")
-            st.write(f"**Mood:** {music_params.get('mood', 'N/A').title()}")
-        with col2:
-            st.write(f"**Volume:** {music_params.get('volume', 'N/A')}")
-            st.write(
-                f"**Instruments:** {', '.join(music_params.get('instruments', [])) or 'Any'}"
-            )
-            st.write(
-                f"**Study Habit:** {st.session_state.user_info.get('music_while_studying', 'N/A')}"
-            )
-
-    st.divider()
-
-    # Optional: Show detailed data for review (collapsed by default)
-    with st.expander("📋 View Detailed Data (Optional)"):
-        st.subheader("Music Parameters")
-        st.json(st.session_state.music_params)
-
-        st.subheader("Test Results")
-        st.json(st.session_state.test_answers)
-
-    col1, col2 = st.columns([2, 1])
-
     # Combine all data into one dictionary for submission
     final_data = {
         "timestamp": time.time(),
@@ -613,11 +463,6 @@ def render_final_page():
         "music_params": st.session_state.music_params,
         "test_answers": st.session_state.test_answers,
         "results_summary": results_summary,
-        "performance_analysis": {
-            "baseline_avg": baseline_avg if no_music_sections else 0,
-            "music_avg": music_avg if music_sections else 0,
-            "improvement": difference if (no_music_sections and music_sections) else 0,
-        },
     }
 
     with st.spinner("Submitting your data to the research database..."):
@@ -636,7 +481,6 @@ def render_final_page():
 
 
 # --- MAIN APP ROUTER ---
-
 st.set_page_config(
     page_title="Music & Focus Study",
     page_icon="🎵",
@@ -653,13 +497,13 @@ with col2:
         restart_app()
 
 # Add progress indicator
-if st.session_state.page_number <= 5:
-    progress = (st.session_state.page_number - 1) / 4
-    st.progress(progress, text=f"Step {st.session_state.page_number} of 5")
+if st.session_state.page_index <= 5:
+    progress = (st.session_state.page_index - 1) / 4
+    st.progress(progress, text=f"Step {st.session_state.page_index} of 5")
 
 # Error boundary wrapper
 try:
-    page = st.session_state.page_number
+    page = st.session_state.page_order[st.session_state.page_index - 1]
 
     if page == 1:
         render_page_1()
@@ -668,7 +512,7 @@ try:
     elif page == 3:
         render_test_page(page_num=3, with_music=True)
     elif page == 4:
-        render_test_page(page_num=4, with_music=True)
+        render_test_page(page_num=4, with_music=False)
     elif page == 5:
         render_final_page()
     else:
