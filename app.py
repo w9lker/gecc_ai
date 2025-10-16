@@ -233,8 +233,8 @@ if "test_answers" not in st.session_state:
 if "generated_music_cache" not in st.session_state:
     st.session_state.generated_music_cache = {}
 if "page_order" not in st.session_state:
-    test_pages = [2, 3, 4]
-    random.shuffle(test_pages)
+    test_pages = [3, 2, 4]
+    # random.shuffle(test_pages)
     st.session_state.page_order = [1] + test_pages + [5]
 if "available_passages" not in st.session_state:
     with open("collection.json", "r", encoding="utf-8") as f:
